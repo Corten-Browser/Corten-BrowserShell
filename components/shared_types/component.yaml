@@ -9,7 +9,40 @@ estimated_loc: 3,000-5,000
 dependencies:
   imports: []
 api:
-  provides: []
+  provides:
+    - trait: BrowserComponent
+      module: shared_types::component
+      description: Base trait for all browser components
+    - trait: TabManager
+      module: shared_types::tab
+      description: Tab lifecycle management interface
+    - trait: WindowManager
+      module: shared_types::window
+      description: Window lifecycle management interface
+    - struct: TabId
+      module: shared_types::tab
+      description: Unique tab identifier
+    - struct: WindowId
+      module: shared_types::window
+      description: Unique window identifier
+    - struct: Url
+      module: shared_types::tab
+      description: URL representation
+    - enum: ComponentError
+      module: shared_types::error
+      description: Component-level errors
+    - enum: TabError
+      module: shared_types::error
+      description: Tab management errors
+    - enum: WindowError
+      module: shared_types::error
+      description: Window management errors
+    - enum: ShellMessage
+      module: shared_types::message
+      description: Browser shell messages
+    - enum: ShellResponse
+      module: shared_types::message
+      description: Browser shell responses
   requires: []
 quality:
   min_coverage: 80
@@ -18,3 +51,62 @@ quality:
 metadata:
   created: '2025-11-13'
   last_updated: '2025-11-13'
+user_facing_features:
+  public_api:
+    - trait: BrowserComponent
+      module: shared_types::component
+      methods:
+        - initialize
+        - shutdown
+        - handle_message
+        - health_check
+        - get_metrics
+      description: Base interface for all browser components
+    - trait: TabManager
+      module: shared_types::tab
+      methods:
+        - create_tab
+        - close_tab
+        - navigate
+        - reload
+        - stop
+        - go_back
+        - go_forward
+        - get_tab
+        - get_tabs
+        - activate_tab
+      description: Tab lifecycle and navigation management
+    - trait: WindowManager
+      module: shared_types::window
+      methods:
+        - create_window
+        - close_window
+        - get_windows
+        - get_window
+        - update_window
+        - handle_platform_event
+      description: Window lifecycle management
+    - struct: TabId
+      module: shared_types::tab
+      description: Unique tab identifier (UUID-based)
+    - struct: WindowId
+      module: shared_types::window
+      description: Unique window identifier (UUID-based)
+    - struct: Url
+      module: shared_types::tab
+      description: URL representation with validation
+    - enum: ComponentError
+      module: shared_types::error
+      description: Component-level error types
+    - enum: TabError
+      module: shared_types::error
+      description: Tab management error types
+    - enum: WindowError
+      module: shared_types::error
+      description: Window management error types
+    - enum: ShellMessage
+      module: shared_types::message
+      description: Inter-component message protocol
+    - enum: ShellResponse
+      module: shared_types::message
+      description: Component response types

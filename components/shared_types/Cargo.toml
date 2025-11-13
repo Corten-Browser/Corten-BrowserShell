@@ -1,0 +1,27 @@
+[package]
+name = "shared_types"
+version = "0.17.0"
+edition = "2021"
+authors = ["Corten Browser Team"]
+description = "Common types, interfaces, and message protocol definitions for all browser components"
+
+[dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Async support
+async-trait = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+
+# Error handling
+thiserror = "1.0"
+
+[dev-dependencies]
+# Testing
+proptest = "1.0"
+tokio-test = "0.4"
+
+[lib]
+name = "shared_types"
+path = "src/lib.rs"
