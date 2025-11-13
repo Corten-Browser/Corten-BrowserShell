@@ -1,0 +1,18 @@
+{
+  "project_name": "Corten-BrowserShell",
+  "version": "0.17.0",
+  "lifecycle_state": "pre-release",
+  "api_locked": false,
+  "breaking_changes_policy": "encouraged",
+  "description": "Browser Shell component - primary UI and orchestration layer for CortenBrowser",
+  "technology_stack": "Rust, egui/iced, Tauri/WRY",
+  "target_loc": "50000-75000",
+  "development_timeline": "6-8 weeks",
+  "component_count": 8,
+  "last_updated": "2025-11-13",
+  "architecture_decision_records": [],
+  "quality_metrics": {
+    "target_coverage": 85,
+    "target_quality_score": 90
+  }
+}
