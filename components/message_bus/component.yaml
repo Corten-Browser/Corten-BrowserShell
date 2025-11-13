@@ -1,0 +1,23 @@
+name: message_bus
+version: 0.17.0
+type: core
+level: 1
+description: Inter-component message routing, dispatch, and async processing with
+  priority queues
+technology_stack: Rust, Tokio
+estimated_loc: 6,000-8,000
+dependencies:
+  imports:
+  - name: shared_types
+    version: ^0.17.0
+    import_from: components.shared_types
+api:
+  provides: []
+  requires: []
+quality:
+  min_coverage: 80
+  tdd_required: true
+  bdd_required: false
+metadata:
+  created: '2025-11-13'
+  last_updated: '2025-11-13'

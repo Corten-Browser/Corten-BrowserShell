@@ -1,0 +1,28 @@
+name: window_manager
+version: 0.17.0
+type: feature
+level: 2
+description: Window lifecycle management, multi-window support, and window state coordination
+technology_stack: Rust, egui/iced
+estimated_loc: 8,000-10,000
+dependencies:
+  imports:
+  - name: shared_types
+    version: ^0.17.0
+    import_from: components.shared_types
+  - name: message_bus
+    version: ^0.17.0
+    import_from: components.message_bus
+  - name: platform_abstraction
+    version: ^0.17.0
+    import_from: components.platform_abstraction
+api:
+  provides: []
+  requires: []
+quality:
+  min_coverage: 80
+  tdd_required: true
+  bdd_required: true
+metadata:
+  created: '2025-11-13'
+  last_updated: '2025-11-13'

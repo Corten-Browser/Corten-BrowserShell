@@ -1,0 +1,20 @@
+name: shared_types
+version: 0.17.0
+type: base
+level: 0
+description: Common types, interfaces, and message protocol definitions for all browser
+  components
+technology_stack: Rust
+estimated_loc: 3,000-5,000
+dependencies:
+  imports: []
+api:
+  provides: []
+  requires: []
+quality:
+  min_coverage: 80
+  tdd_required: true
+  bdd_required: false
+metadata:
+  created: '2025-11-13'
+  last_updated: '2025-11-13'

@@ -1,0 +1,26 @@
+name: user_data
+version: 0.17.0
+type: feature
+level: 2
+description: Settings persistence, bookmarks management, downloads tracking, and history
+  storage
+technology_stack: Rust, SQLite
+estimated_loc: 8,000-10,000
+dependencies:
+  imports:
+  - name: shared_types
+    version: ^0.17.0
+    import_from: components.shared_types
+  - name: message_bus
+    version: ^0.17.0
+    import_from: components.message_bus
+api:
+  provides: []
+  requires: []
+quality:
+  min_coverage: 80
+  tdd_required: true
+  bdd_required: true
+metadata:
+  created: '2025-11-13'
+  last_updated: '2025-11-13'

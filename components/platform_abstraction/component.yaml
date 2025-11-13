@@ -1,0 +1,23 @@
+name: platform_abstraction
+version: 0.17.0
+type: core
+level: 1
+description: Platform-specific window operations, clipboard, notifications, and system
+  integration
+technology_stack: Rust, X11rb, Win32 API, Cocoa
+estimated_loc: 8,000-10,000
+dependencies:
+  imports:
+  - name: shared_types
+    version: ^0.17.0
+    import_from: components.shared_types
+api:
+  provides: []
+  requires: []
+quality:
+  min_coverage: 80
+  tdd_required: true
+  bdd_required: false
+metadata:
+  created: '2025-11-13'
+  last_updated: '2025-11-13'
