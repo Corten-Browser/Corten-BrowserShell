@@ -11,8 +11,74 @@ dependencies:
   - name: shared_types
     version: ^0.17.0
     import_from: components.shared_types
+    uses:
+      - ComponentMessage
+      - ComponentResponse
+      - MessageTarget
+      - MessagePriority
+      - MessagePayload
+user_facing_features:
+  public_api:
+    - class: MessageBus
+      module: message_bus
+      methods:
+        - new
+        - register_component
+        - deregister_component
+        - route_message
+        - enqueue_message
+        - process_next
+        - queue_length
+        - is_component_registered
+        - get_metrics
+      description: Main message bus for routing and dispatching messages
+
+    - class: MessageRouter
+      module: message_bus::router
+      methods:
+        - new
+        - register_component
+        - deregister_component
+        - route
+      description: Message routing logic
+
+    - class: PriorityQueue
+      module: message_bus::queue
+      methods:
+        - new
+        - push
+        - pop
+        - try_push
+        - try_pop
+      description: Priority-based message queue
+
+    - class: MessageValidator
+      module: message_bus::validator
+      methods:
+        - new
+        - validate
+      description: Message validation with size limits
+
+    - class: ComponentRegistry
+      module: message_bus::registry
+      methods:
+        - new
+        - register
+        - deregister
+        - is_registered
+        - get_sender
+        - list_components
+      description: Component registration and management
+
+    - enum: MessageBusError
+      module: message_bus
+      description: Error types for message bus operations
 api:
-  provides: []
+  provides:
+    - message_routing
+    - priority_queuing
+    - component_registry
+    - message_validation
   requires: []
 quality:
   min_coverage: 80
