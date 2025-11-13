@@ -1,0 +1,33 @@
+[package]
+name = "message_bus"
+version = "0.17.0"
+edition = "2021"
+authors = ["Corten Browser Team"]
+description = "Inter-component message routing, dispatch, and async processing with priority queues"
+
+[dependencies]
+# Shared types from our component
+shared_types = { path = "../shared_types" }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
+
+# Error handling
+thiserror = "1.0"
+
+# Collections and utilities
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+[dev-dependencies]
+# Testing
+tokio-test = "0.4"
+proptest = "1.0"
+
+[lib]
+name = "message_bus"
+path = "src/lib.rs"

@@ -1,0 +1,47 @@
+[package]
+name = "platform_abstraction"
+version = "0.17.0"
+edition = "2021"
+authors = ["Corten Browser Team"]
+description = "Platform-specific window operations, clipboard, notifications, and system integration"
+
+[dependencies]
+# Shared types dependency
+shared_types = { path = "../shared_types" }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Async support
+async-trait = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+
+# Error handling
+thiserror = "1.0"
+
+# Platform-specific dependencies (conditional compilation)
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = { version = "0.13", optional = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.52", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"], optional = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = { version = "0.25", optional = true }
+objc = { version = "0.2", optional = true }
+
+[dev-dependencies]
+# Testing
+tokio-test = "0.4"
+mockall = "0.12"
+
+[features]
+default = []
+x11 = ["x11rb"]
+win32 = ["windows"]
+macos = ["cocoa", "objc"]
+
+[lib]
+name = "platform_abstraction"
+path = "src/lib.rs"
