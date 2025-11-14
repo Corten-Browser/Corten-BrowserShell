@@ -1,0 +1,25 @@
+name: session_manager
+version: 0.19.0
+type: feature
+level: 2
+description: Session management, crash recovery, and recently closed tabs tracking
+technology_stack: Rust
+estimated_loc: 3,000-4,000
+dependencies:
+  imports:
+  - name: shared_types
+    version: ^0.19.0
+    import_from: components.shared_types
+  - name: user_data
+    version: ^0.19.0
+    import_from: components.user_data
+api:
+  provides: []
+  requires: []
+quality:
+  min_coverage: 80
+  tdd_required: true
+  bdd_required: false
+metadata:
+  created: '2025-11-14'
+  last_updated: '2025-11-14'
