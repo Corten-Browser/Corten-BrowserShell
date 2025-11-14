@@ -14,8 +14,71 @@ dependencies:
     version: ^0.17.0
     import_from: components.message_bus
 api:
-  provides: []
-  requires: []
+  provides:
+    - TabManagerImpl
+    - NavigationHistory
+    - MockProcessManager
+    - TabState
+  requires:
+    - shared_types.TabManager
+    - shared_types.Tab
+    - shared_types.TabId
+    - shared_types.WindowId
+    - shared_types.Url
+user_facing_features:
+  public_api:
+    - class: TabManagerImpl
+      module: components.tab_manager.src.manager
+      methods:
+        - new
+        - tab_count
+        - is_active_tab
+        - create_tab
+        - close_tab
+        - navigate
+        - reload
+        - stop
+        - go_back
+        - go_forward
+        - get_tab
+        - get_tabs
+        - activate_tab
+      description: High-performance tab manager implementation supporting 500+ tabs
+    - class: NavigationHistory
+      module: components.tab_manager.src.navigation
+      methods:
+        - new
+        - navigate
+        - go_back
+        - go_forward
+        - can_go_back
+        - can_go_forward
+        - current_url
+      description: Navigation history manager for back/forward stacks
+    - class: MockProcessManager
+      module: components.tab_manager.src.process
+      methods:
+        - new
+        - allocate_process
+        - get_process
+        - release_process
+        - active_processes
+        - process_count
+      description: Mock process isolation manager for tabs
+    - class: TabState
+      module: components.tab_manager.src.state
+      methods:
+        - new
+        - to_tab
+        - navigate
+        - go_back
+        - go_forward
+        - finish_loading
+        - stop_loading
+        - set_process
+        - set_title
+        - set_favicon
+      description: Complete state tracking for a single tab
 quality:
   min_coverage: 80
   tdd_required: true
