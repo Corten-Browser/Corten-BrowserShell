@@ -101,7 +101,7 @@ impl DownloadManager {
     async fn start_download_task(
         &mut self,
         id: DownloadId,
-        url: String,
+        _url: String,
         save_path: String,
     ) -> Result<()> {
         let storage = self.storage.clone();
