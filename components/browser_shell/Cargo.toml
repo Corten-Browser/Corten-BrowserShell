@@ -1,6 +1,6 @@
 [package]
 name = "browser_shell"
-version = "0.18.0"
+version = "0.19.0"
 edition = "2021"
 authors = ["Corten Browser Team"]
 description = "Main browser orchestration, component lifecycle coordination, and public API exposure"
@@ -17,6 +17,7 @@ user_data = { path = "../user_data" }
 bookmarks = { path = "../bookmarks" }
 downloads = { path = "../downloads" }
 history = { path = "../history" }
+session_manager = { path = "../session_manager" }
 
 # Async runtime
 tokio = { version = "1.35", features = ["full"] }

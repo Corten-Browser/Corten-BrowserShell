@@ -1,5 +1,5 @@
 name: browser_shell
-version: 0.18.0
+version: 0.19.0
 type: integration
 level: 3
 description: Main browser orchestration, component lifecycle coordination, and public
@@ -9,35 +9,38 @@ estimated_loc: 6,000-8,000
 dependencies:
   imports:
   - name: shared_types
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.shared_types
   - name: message_bus
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.message_bus
   - name: platform_abstraction
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.platform_abstraction
   - name: window_manager
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.window_manager
   - name: tab_manager
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.tab_manager
   - name: ui_chrome
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.ui_chrome
   - name: user_data
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.user_data
   - name: bookmarks
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.bookmarks
   - name: downloads
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.downloads
   - name: history
-    version: ^0.18.0
+    version: ^0.19.0
     import_from: components.history
+  - name: session_manager
+    version: ^0.19.0
+    import_from: components.session_manager
 api:
   provides: []
   requires: []
@@ -47,4 +50,4 @@ quality:
   bdd_required: true
 metadata:
   created: '2025-11-13'
-  last_updated: '2025-11-13'
+  last_updated: '2025-11-14'
