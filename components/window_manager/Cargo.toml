@@ -1,0 +1,26 @@
+[package]
+name = "window_manager"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Shared types from the project
+shared_types = { path = "../shared_types" }
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Collections and synchronization
+parking_lot = "0.12"  # Better synchronization primitives
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[lib]
+name = "window_manager"
+path = "src/lib.rs"
