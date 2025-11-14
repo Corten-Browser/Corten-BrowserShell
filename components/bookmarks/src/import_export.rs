@@ -139,7 +139,6 @@ fn generate_folder(
     folder_map: &std::collections::HashMap<Option<String>, Vec<&Bookmark>>,
     indent_level: usize,
 ) {
-    let indent = "    ".repeat(indent_level);
     let parts: Vec<&str> = folder_path.split('/').collect();
 
     // Generate folder hierarchy

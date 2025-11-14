@@ -1,4 +1,4 @@
-use crate::types::{HistoryVisit, PageStats, SearchQuery, TransitionType, VisitId};
+use crate::types::{HistoryVisit, PageStats, SearchQuery, TransitionType};
 use anyhow::{Context, Result};
 use parking_lot::Mutex;
 use rusqlite::Connection;

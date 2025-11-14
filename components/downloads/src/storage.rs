@@ -5,6 +5,7 @@ use rusqlite::{params, Connection};
 use std::sync::Arc;
 
 /// SQLite-based storage for download metadata
+#[derive(Clone)]
 pub struct DownloadStorage {
     conn: Arc<Mutex<Connection>>,
 }
@@ -207,7 +208,7 @@ impl DownloadStorage {
     pub fn clear_completed(&self) -> Result<()> {
         let conn = self.conn.lock();
         conn.execute(
-            "DELETE FROM downloads WHERE status LIKE '\"Completed%'",
+            "DELETE FROM downloads WHERE status LIKE '%\"Completed%'",
             [],
         )?;
         Ok(())
