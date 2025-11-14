@@ -1,0 +1,56 @@
+contract_name: ui_chrome
+version: 0.1.0
+description: Browser UI elements (address bar, toolbar, menus)
+
+dependencies:
+  - shared_types
+  - message_bus
+
+api:
+  UiChrome:
+    description: Renders and manages browser UI chrome
+
+    methods:
+      render:
+        description: Render UI frame
+        params:
+          - name: ctx
+            type: EguiContext
+        returns: Result<(), ComponentError>
+        async: false
+
+      handle_address_bar_input:
+        description: Handle user input in address bar
+        params:
+          - name: text
+            type: String
+        returns: Result<(), ComponentError>
+        async: true
+
+      handle_keyboard_shortcut:
+        description: Handle keyboard shortcuts
+        params:
+          - name: shortcut
+            type: KeyboardShortcut
+        returns: Result<(), ComponentError>
+        async: true
+
+      update_tab_title:
+        description: Update tab title in tab bar
+        params:
+          - name: tab_id
+            type: TabId
+          - name: title
+            type: String
+        returns: Result<(), ComponentError>
+        async: false
+
+      update_loading_state:
+        description: Update loading indicator
+        params:
+          - name: tab_id
+            type: TabId
+          - name: loading
+            type: bool
+        returns: Result<(), ComponentError>
+        async: false

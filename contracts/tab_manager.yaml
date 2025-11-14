@@ -1,0 +1,94 @@
+contract_name: tab_manager
+version: 0.1.0
+description: Tab lifecycle and navigation management
+
+dependencies:
+  - shared_types
+  - message_bus
+
+api:
+  TabManager:
+    description: Manages tab creation, navigation, and lifecycle
+
+    methods:
+      create_tab:
+        description: Create a new tab in a window
+        params:
+          - name: window_id
+            type: WindowId
+          - name: url
+            type: Option<String>
+        returns: Result<TabId, TabError>
+        async: true
+
+      close_tab:
+        description: Close a tab
+        params:
+          - name: tab_id
+            type: TabId
+        returns: Result<(), TabError>
+        async: true
+
+      navigate:
+        description: Navigate tab to URL
+        params:
+          - name: tab_id
+            type: TabId
+          - name: url
+            type: String
+        returns: Result<(), TabError>
+        async: true
+
+      reload:
+        description: Reload tab content
+        params:
+          - name: tab_id
+            type: TabId
+          - name: ignore_cache
+            type: bool
+        returns: Result<(), TabError>
+        async: true
+
+      stop:
+        description: Stop loading current page
+        params:
+          - name: tab_id
+            type: TabId
+        returns: Result<(), TabError>
+        async: true
+
+      go_back:
+        description: Navigate to previous page in history
+        params:
+          - name: tab_id
+            type: TabId
+        returns: Result<(), TabError>
+        async: true
+
+      go_forward:
+        description: Navigate to next page in history
+        params:
+          - name: tab_id
+            type: TabId
+        returns: Result<(), TabError>
+        async: true
+
+      get_tab_info:
+        description: Get tab information
+        params:
+          - name: tab_id
+            type: TabId
+        returns: Option<TabInfo>
+        async: false
+
+types:
+  TabInfo:
+    type: struct
+    fields:
+      id: TabId
+      window_id: WindowId
+      title: String
+      url: Option<String>
+      loading: bool
+      can_go_back: bool
+      can_go_forward: bool

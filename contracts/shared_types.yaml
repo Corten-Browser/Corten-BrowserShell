@@ -1,0 +1,85 @@
+contract_name: shared_types
+version: 0.1.0
+description: Common data structures and types for browser shell
+
+types:
+  WindowId:
+    type: newtype
+    inner: uuid
+    description: Unique identifier for browser windows
+
+  TabId:
+    type: newtype
+    inner: uuid
+    description: Unique identifier for tabs
+
+  ProcessId:
+    type: newtype
+    inner: u32
+    description: Operating system process identifier
+
+  RenderSurfaceId:
+    type: newtype
+    inner: uuid
+    description: Identifier for render surfaces
+
+  DownloadId:
+    type: newtype
+    inner: uuid
+    description: Identifier for downloads
+
+  BookmarkId:
+    type: newtype
+    inner: uuid
+    description: Identifier for bookmarks
+
+  WindowConfig:
+    type: struct
+    fields:
+      title: String
+      width: u32
+      height: u32
+      x: Option<i32>
+      y: Option<i32>
+      fullscreen: bool
+      resizable: bool
+      decorations: bool
+      always_on_top: bool
+      skip_taskbar: bool
+
+  KeyboardShortcut:
+    type: enum
+    variants:
+      - CtrlT  # New tab
+      - CtrlW  # Close tab
+      - CtrlN  # New window
+      - CtrlShiftT  # Reopen closed tab
+      - CtrlL  # Focus address bar
+      - F5  # Reload
+      - CtrlR  # Reload
+      - CtrlShiftR  # Hard reload
+
+  ComponentError:
+    type: enum
+    variants:
+      - InitializationFailed(String)
+      - MessageRoutingFailed(String)
+      - InvalidState(String)
+      - ResourceNotFound(String)
+      - PermissionDenied(String)
+
+  WindowError:
+    type: enum
+    variants:
+      - CreationFailed(String)
+      - NotFound(WindowId)
+      - InvalidConfig(String)
+      - PlatformError(String)
+
+  TabError:
+    type: enum
+    variants:
+      - CreationFailed(String)
+      - NotFound(TabId)
+      - NavigationFailed(String)
+      - ProcessIsolationFailed(String)

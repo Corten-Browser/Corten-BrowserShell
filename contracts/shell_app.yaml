@@ -1,0 +1,47 @@
+contract_name: shell_app
+version: 0.1.0
+description: Application entry point and CLI
+
+dependencies:
+  - browser_shell
+
+api:
+  ShellApp:
+    description: Main application entry point
+
+    methods:
+      main:
+        description: Application entry point
+        params:
+          - name: args
+            type: Vec<String>
+        returns: Result<(), ComponentError>
+        async: true
+
+      parse_args:
+        description: Parse command-line arguments
+        params:
+          - name: args
+            type: Vec<String>
+        returns: Result<AppConfig, ComponentError>
+        async: false
+
+types:
+  AppConfig:
+    type: struct
+    fields:
+      user_data_dir: Option<String>
+      initial_url: Option<String>
+      fullscreen: bool
+      headless: bool
+      enable_devtools: bool
+      log_level: LogLevel
+
+  LogLevel:
+    type: enum
+    variants:
+      - Error
+      - Warn
+      - Info
+      - Debug
+      - Trace

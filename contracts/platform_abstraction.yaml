@@ -1,0 +1,92 @@
+contract_name: platform_abstraction
+version: 0.1.0
+description: Platform-specific window implementations
+
+dependencies:
+  - shared_types
+
+api:
+  PlatformWindow:
+    description: Platform-specific window implementation
+
+    methods:
+      create:
+        description: Create platform-specific window
+        params:
+          - name: config
+            type: WindowConfig
+        returns: Result<Self, WindowError>
+        async: false
+
+      destroy:
+        description: Destroy platform window
+        params: []
+        returns: Result<(), WindowError>
+        async: false
+
+      show:
+        description: Show the window
+        params: []
+        returns: Result<(), WindowError>
+        async: false
+
+      hide:
+        description: Hide the window
+        params: []
+        returns: Result<(), WindowError>
+        async: false
+
+      resize:
+        description: Resize window
+        params:
+          - name: width
+            type: u32
+          - name: height
+            type: u32
+        returns: Result<(), WindowError>
+        async: false
+
+      move_to:
+        description: Move window to position
+        params:
+          - name: x
+            type: i32
+          - name: y
+            type: i32
+        returns: Result<(), WindowError>
+        async: false
+
+      focus:
+        description: Focus the window
+        params: []
+        returns: Result<(), WindowError>
+        async: false
+
+      get_handle:
+        description: Get platform-specific window handle
+        params: []
+        returns: PlatformHandle
+        async: false
+
+types:
+  PlatformHandle:
+    type: enum
+    variants:
+      - Linux(LinuxHandle)
+      - Windows(WindowsHandle)
+      - MacOS(MacOSHandle)
+
+  LinuxHandle:
+    type: struct
+    fields:
+      window: u32  # X11/Wayland window ID
+
+  WindowsHandle:
+    type: struct
+    fields:
+      hwnd: usize  # HWND as raw pointer
+
+  MacOSHandle:
+    type: struct
+    fields:
+      ns_window: usize  # NSWindow pointer

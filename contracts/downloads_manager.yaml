@@ -1,0 +1,82 @@
+contract_name: downloads_manager
+version: 0.1.0
+description: Download tracking and management
+
+dependencies:
+  - shared_types
+  - message_bus
+
+api:
+  DownloadsManager:
+    description: Manages file downloads
+
+    methods:
+      start_download:
+        description: Start downloading a file
+        params:
+          - name: url
+            type: String
+          - name: destination
+            type: Option<String>
+        returns: Result<DownloadId, ComponentError>
+        async: true
+
+      pause_download:
+        description: Pause an active download
+        params:
+          - name: id
+            type: DownloadId
+        returns: Result<(), ComponentError>
+        async: true
+
+      resume_download:
+        description: Resume a paused download
+        params:
+          - name: id
+            type: DownloadId
+        returns: Result<(), ComponentError>
+        async: true
+
+      cancel_download:
+        description: Cancel a download
+        params:
+          - name: id
+            type: DownloadId
+        returns: Result<(), ComponentError>
+        async: true
+
+      get_download_info:
+        description: Get download progress and info
+        params:
+          - name: id
+            type: DownloadId
+        returns: Option<DownloadInfo>
+        async: false
+
+      get_active_downloads:
+        description: Get all active downloads
+        params: []
+        returns: Vec<DownloadInfo>
+        async: false
+
+types:
+  DownloadInfo:
+    type: struct
+    fields:
+      id: DownloadId
+      url: String
+      destination: String
+      filename: String
+      total_bytes: u64
+      downloaded_bytes: u64
+      status: DownloadStatus
+
+  DownloadStatus:
+    type: enum
+    variants:
+      - Pending
+      - Downloading
+      - Paused
+      - Complete
+      - Failed(String)
+      - Cancelled

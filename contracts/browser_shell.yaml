@@ -1,0 +1,71 @@
+contract_name: browser_shell
+version: 0.1.0
+description: Main browser shell orchestrator
+
+dependencies:
+  - shared_types
+  - message_bus
+  - window_manager
+  - tab_manager
+  - ui_chrome
+  - settings_manager
+  - downloads_manager
+  - bookmarks_manager
+
+api:
+  BrowserShell:
+    description: Main orchestrator coordinating all browser components
+
+    methods:
+      initialize:
+        description: Initialize browser shell and all components
+        params:
+          - name: config
+            type: ShellConfig
+        returns: Result<(), ComponentError>
+        async: true
+
+      shutdown:
+        description: Gracefully shutdown all components
+        params: []
+        returns: Result<(), ComponentError>
+        async: true
+
+      run:
+        description: Start the browser shell event loop
+        params: []
+        returns: Result<(), ComponentError>
+        async: true
+
+      new_window:
+        description: Create a new browser window
+        params:
+          - name: config
+            type: Option<WindowConfig>
+        returns: Result<WindowId, ComponentError>
+        async: true
+
+      new_tab:
+        description: Create a new tab in active window
+        params:
+          - name: url
+            type: Option<String>
+        returns: Result<TabId, ComponentError>
+        async: true
+
+      navigate:
+        description: Navigate active tab to URL
+        params:
+          - name: url
+            type: String
+        returns: Result<(), ComponentError>
+        async: true
+
+types:
+  ShellConfig:
+    type: struct
+    fields:
+      window_config: WindowConfig
+      enable_devtools: bool
+      enable_extensions: bool
+      user_data_dir: String
