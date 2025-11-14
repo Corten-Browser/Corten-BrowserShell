@@ -32,7 +32,8 @@ impl BrowserShellAPI {
 
     /// Create a new window
     pub async fn new_window(&self, config: WindowConfig) -> Result<WindowId> {
-        let mut wm = self.coordinator.window_manager().write();
+        let wm_arc = self.coordinator.window_manager();
+        let mut wm = wm_arc.write();
         wm.create_window(config)
             .await
             .context("Failed to create window")
@@ -40,7 +41,8 @@ impl BrowserShellAPI {
 
     /// Close a window
     pub async fn close_window(&self, id: WindowId) -> Result<()> {
-        let mut wm = self.coordinator.window_manager().write();
+        let wm_arc = self.coordinator.window_manager();
+        let mut wm = wm_arc.write();
         wm.close_window(id)
             .await
             .context("Failed to close window")
@@ -51,7 +53,8 @@ impl BrowserShellAPI {
         let url = url.map(|s| Url::parse(&s)).transpose()
             .context("Invalid URL")?;
 
-        let mut tm = self.coordinator.tab_manager().write();
+        let tm_arc = self.coordinator.tab_manager();
+        let mut tm = tm_arc.write();
         tm.create_tab(window_id, url)
             .await
             .context("Failed to create tab")
@@ -62,7 +65,8 @@ impl BrowserShellAPI {
         let url = Url::parse(&url)
             .context("Invalid URL")?;
 
-        let mut tm = self.coordinator.tab_manager().write();
+        let tm_arc = self.coordinator.tab_manager();
+        let mut tm = tm_arc.write();
         tm.navigate(tab_id, url)
             .await
             .context("Failed to navigate")
@@ -70,7 +74,8 @@ impl BrowserShellAPI {
 
     /// Reload a tab
     pub async fn reload(&self, tab_id: TabId) -> Result<()> {
-        let mut tm = self.coordinator.tab_manager().write();
+        let tm_arc = self.coordinator.tab_manager();
+        let mut tm = tm_arc.write();
         tm.reload(tab_id, false)
             .await
             .context("Failed to reload tab")
@@ -78,7 +83,8 @@ impl BrowserShellAPI {
 
     /// Go back in navigation history
     pub async fn go_back(&self, tab_id: TabId) -> Result<()> {
-        let mut tm = self.coordinator.tab_manager().write();
+        let tm_arc = self.coordinator.tab_manager();
+        let mut tm = tm_arc.write();
         tm.go_back(tab_id)
             .await
             .context("Failed to go back")
@@ -86,7 +92,8 @@ impl BrowserShellAPI {
 
     /// Go forward in navigation history
     pub async fn go_forward(&self, tab_id: TabId) -> Result<()> {
-        let mut tm = self.coordinator.tab_manager().write();
+        let tm_arc = self.coordinator.tab_manager();
+        let mut tm = tm_arc.write();
         tm.go_forward(tab_id)
             .await
             .context("Failed to go forward")
@@ -94,7 +101,8 @@ impl BrowserShellAPI {
 
     /// Close a tab
     pub async fn close_tab(&self, tab_id: TabId) -> Result<()> {
-        let mut tm = self.coordinator.tab_manager().write();
+        let tm_arc = self.coordinator.tab_manager();
+        let mut tm = tm_arc.write();
         tm.close_tab(tab_id)
             .await
             .context("Failed to close tab")
@@ -102,17 +110,18 @@ impl BrowserShellAPI {
 
     /// Get a setting value
     pub async fn get_setting(&self, key: &str) -> Result<String> {
-        let sm = self.coordinator.settings_manager().read();
+        let sm_arc = self.coordinator.settings_manager();
+        let sm = sm_arc.read();
         sm.get(key)
-            .await
-            .context("Failed to get setting")
+            .context("Failed to get setting")?
+            .ok_or_else(|| anyhow::anyhow!("Setting '{}' not found", key))
     }
 
     /// Set a setting value
     pub async fn set_setting(&self, key: &str, value: String) -> Result<()> {
-        let sm = self.coordinator.settings_manager().read();
+        let sm_arc = self.coordinator.settings_manager();
+        let mut sm = sm_arc.write();
         sm.set(key, &value)
-            .await
             .context("Failed to set setting")
     }
 }

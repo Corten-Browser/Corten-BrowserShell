@@ -30,6 +30,9 @@ anyhow = "1.0"
 # Collections and synchronization
 parking_lot = "0.12"
 
+# Database
+rusqlite = "0.30"
+
 [dev-dependencies]
 tokio-test = "0.4"
 
