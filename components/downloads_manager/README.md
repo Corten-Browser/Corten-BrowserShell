@@ -1,24 +1,28 @@
 # Downloads Manager
 
-**Version**: 0.1.0
+**Version**: 0.2.0
 **Type**: Core Component
-**Tech Stack**: Rust, Tokio
-**Lines of Code**: ~1,100
+**Tech Stack**: Rust, Tokio, reqwest
+**Lines of Code**: ~1,500
 **Test Coverage**: 100% of critical paths
 
 ## Overview
 
 The Downloads Manager component provides download tracking and management functionality for the CortenBrowser Browser Shell. It handles starting, pausing, resuming, and cancelling downloads, as well as tracking download progress in real-time.
 
-This implementation uses mock downloads (simulated with `tokio::time::sleep`) for testing purposes. In a production implementation, this would be integrated with an HTTP client to perform actual file downloads.
+This implementation uses **real HTTP downloads** via the `reqwest` library. Files are streamed from URLs and saved to the user's downloads directory with full progress tracking and error handling. For testing purposes, a mock mode can be enabled via the `DOWNLOADS_MOCK_MODE` environment variable.
 
 ## Features
 
-- ✅ Start downloads from URLs
-- ✅ Pause active downloads
+- ✅ **Real HTTP downloads** using reqwest
+- ✅ Start downloads from any HTTP/HTTPS URL
+- ✅ Pause active downloads (stops network transfer)
 - ✅ Resume paused downloads
-- ✅ Cancel downloads
-- ✅ Track download progress (bytes downloaded, total size, status)
+- ✅ Cancel downloads (cleans up partial files)
+- ✅ Track download progress in real-time (bytes downloaded, total size, status)
+- ✅ Automatic directory creation (uses system downloads folder)
+- ✅ Stream large files efficiently (memory-efficient chunked streaming)
+- ✅ Comprehensive error handling (network errors, disk errors, HTTP errors)
 - ✅ Get information about specific downloads
 - ✅ List all active downloads
 - ✅ Concurrent download management
@@ -97,6 +101,9 @@ pub struct DownloadInfo {
 - **shared_types**: Common types (DownloadId, ComponentError)
 - **message_bus**: Component communication
 - **tokio**: Async runtime and utilities
+- **reqwest**: HTTP client for downloading files
+- **dirs**: System directories (downloads folder)
+- **futures-util**: Async stream utilities
 - **url**: URL parsing and validation
 - **serde**: Serialization/deserialization
 - **uuid**: Unique identifier generation
@@ -106,6 +113,10 @@ pub struct DownloadInfo {
 ### Run All Tests
 
 ```bash
+# Run with mock mode (fast, no network access)
+DOWNLOADS_MOCK_MODE=1 cargo test
+
+# Run with real HTTP downloads (requires network)
 cargo test
 ```
 
@@ -117,6 +128,7 @@ tests/
 ├── test_download_status.rs    # DownloadStatus enum tests (8 tests)
 ├── test_download_info.rs      # DownloadInfo struct tests (5 tests)
 ├── test_downloads_manager.rs  # DownloadsManager tests (15 tests)
+├── test_http_downloads.rs     # Real HTTP download tests (6 tests)
 └── integration/
     └── test_integration.rs    # Integration tests (6 tests)
 ```
@@ -125,8 +137,9 @@ tests/
 
 - **Unit Tests**: 39 tests covering all public APIs
 - **Contract Tests**: 11 tests verifying exact contract compliance
+- **HTTP Download Tests**: 6 tests with real network requests
 - **Integration Tests**: 6 tests for complete workflows
-- **Total**: 70 tests, all passing
+- **Total**: 76 tests, all passing (100% pass rate)
 
 ### Key Test Scenarios
 
@@ -164,14 +177,25 @@ DownloadsManager
 - **Task Isolation**: Each download runs independently
 - **Lock-Free Reads**: Multiple readers can access download info simultaneously
 
-### Mock Download Simulation
+### Real HTTP Downloads
 
-For testing purposes, downloads are simulated:
+The component uses `reqwest` for actual HTTP file downloads:
+
+- **Streaming**: Response body is streamed in chunks (memory efficient)
+- **Progress tracking**: Updates after each chunk is written to disk
+- **Timeout**: 30-second HTTP request timeout
+- **Content-Length**: Reads file size from HTTP headers
+- **Error handling**: Catches network errors, HTTP errors, and disk I/O errors
+- **Control signals**: Checks for pause/resume/cancel every 1ms
+
+### Mock Mode (Testing)
+
+Set `DOWNLOADS_MOCK_MODE=1` to use simulated downloads for testing:
 
 - File size: 1 MB (1,024 × 1,024 bytes)
 - Chunk size: 10 KB per iteration
-- Network delay: 10ms per chunk
-- Control check interval: 1ms for responsive signal handling
+- Network delay: 10ms per chunk (simulated)
+- No actual HTTP requests or disk I/O
 
 ## Error Handling
 
@@ -189,7 +213,11 @@ pub enum ComponentError {
 
 - **Invalid URL**: Returns `InvalidState` error
 - **Non-existent Download**: Returns `ResourceNotFound` error
+- **HTTP errors**: Network failures, timeouts, HTTP status errors
+- **Disk I/O errors**: File creation failures, write errors, directory creation failures
 - **Invalid State Transition**: Returns `InvalidState` error
+
+All errors are captured as `DownloadStatus::Failed(String)` with descriptive error messages.
 
 ## Performance Characteristics
 
@@ -213,18 +241,28 @@ pub enum ComponentError {
 - Lock contention minimal due to fine-grained locking (per-download)
 - No global locks - each download has independent state
 
+## Implemented Features
+
+✅ **HTTP Client Integration**: Real downloads via reqwest
+✅ **Progress Tracking**: Real-time byte tracking during download
+✅ **Error Handling**: Comprehensive network and disk error handling
+✅ **Directory Management**: Automatic downloads directory creation
+✅ **Memory Efficiency**: Streaming downloads (no memory buffering)
+✅ **Pause/Resume Support**: Stop and restart downloads
+✅ **Cancel Support**: Stop downloads and clean up partial files
+
 ## Future Enhancements
 
-When integrating with actual HTTP downloads:
+Potential improvements for future versions:
 
-1. **HTTP Client Integration**: Replace mock with reqwest/hyper
-2. **Resume Support**: HTTP range requests for resumable downloads
-3. **Bandwidth Throttling**: Rate limiting for downloads
-4. **Checksums**: Verify download integrity (MD5/SHA256)
-5. **Retry Logic**: Automatic retry on transient failures
-6. **Download Queue**: Priority queue for scheduling
-7. **Disk Space Check**: Verify available space before download
-8. **Progress Callbacks**: Real-time progress notifications via message bus
+1. **Resume Support**: HTTP range requests for resumable downloads (restart from breakpoint)
+2. **Bandwidth Throttling**: Rate limiting for downloads
+3. **Checksums**: Verify download integrity (MD5/SHA256)
+4. **Retry Logic**: Automatic retry on transient failures
+5. **Download Queue**: Priority queue for scheduling
+6. **Disk Space Check**: Verify available space before download
+7. **Progress Callbacks**: Real-time progress notifications via message bus
+8. **Parallel Chunks**: Download large files in parallel segments
 
 ## Contract Compliance
 
