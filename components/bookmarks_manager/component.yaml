@@ -1,0 +1,19 @@
+name: bookmarks_manager
+type: feature
+version: 0.1.0
+tech_stack:
+  - rust
+
+dependencies:
+    - shared_types
+
+estimated_size:
+  lines_of_code: 5000
+  tokens: 50000
+
+quality_requirements:
+  min_test_coverage: 80
+  enforce_tdd: true
+  enforce_bdd: false
+
+description: Bookmark storage, organization, UI integration, and synchronization

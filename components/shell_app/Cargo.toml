@@ -1,0 +1,31 @@
+[package]
+name = "shell_app"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# Component dependencies
+# browser_shell = { path = "../browser_shell" }  # TODO: Re-enable when browser_shell compiles
+shared_types = { path = "../shared_types" }
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+
+# CLI parsing
+clap = { version = "4.4", features = ["derive"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+# Testing
+assert_cmd = "2.0"
+predicates = "3.0"

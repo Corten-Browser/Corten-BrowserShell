@@ -1,0 +1,20 @@
+name: ui_chrome
+type: feature
+version: 0.1.0
+tech_stack:
+  - rust
+
+dependencies:
+    - shared_types
+    - message_bus
+
+estimated_size:
+  lines_of_code: 15000
+  tokens: 150000
+
+quality_requirements:
+  min_test_coverage: 80
+  enforce_tdd: true
+  enforce_bdd: false
+
+description: Browser chrome UI elements including address bar, toolbar, tab bar, menus, and keyboard shortcuts

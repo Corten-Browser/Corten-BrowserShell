@@ -1,0 +1,26 @@
+name: browser_shell
+type: integration
+version: 0.1.0
+tech_stack:
+  - rust
+
+dependencies:
+    - shared_types
+    - message_bus
+    - window_manager
+    - tab_manager
+    - ui_chrome
+    - settings_manager
+    - downloads_manager
+    - bookmarks_manager
+
+estimated_size:
+  lines_of_code: 8000
+  tokens: 80000
+
+quality_requirements:
+  min_test_coverage: 80
+  enforce_tdd: true
+  enforce_bdd: false
+
+description: Main orchestrator coordinating all browser shell components through the message bus

@@ -1,0 +1,79 @@
+contract_name: message_bus
+version: 0.1.0
+description: Async message routing between browser components
+
+dependencies:
+  - shared_types
+
+api:
+  MessageBus:
+    description: Central message bus for component communication
+
+    methods:
+      register:
+        description: Register a component with the message bus
+        params:
+          - name: component_id
+            type: String
+          - name: component_type
+            type: String
+        returns: Result<(), ComponentError>
+        async: true
+
+      send:
+        description: Send message to specific component
+        params:
+          - name: target
+            type: String
+          - name: message
+            type: ComponentMessage
+        returns: Result<ComponentResponse, ComponentError>
+        async: true
+
+      broadcast:
+        description: Broadcast message to all components
+        params:
+          - name: message
+            type: ComponentMessage
+        returns: Result<(), ComponentError>
+        async: true
+
+      subscribe:
+        description: Subscribe to message types
+        params:
+          - name: component_id
+            type: String
+          - name: message_type
+            type: String
+        returns: Result<(), ComponentError>
+        async: true
+
+types:
+  ComponentMessage:
+    type: enum
+    variants:
+      - CreateWindow(WindowConfig)
+      - CloseWindow(WindowId)
+      - CreateTab(WindowId, Option<String>)
+      - CloseTab(TabId)
+      - NavigateTab(TabId, String)
+      - UpdateAddressBar(TabId, String)
+      - UpdateTitle(TabId, String)
+      - KeyboardShortcut(KeyboardShortcut)
+
+  ComponentResponse:
+    type: enum
+    variants:
+      - WindowCreated(WindowId)
+      - TabCreated(TabId)
+      - NavigationStarted(TabId)
+      - Success
+      - Error(String)
+
+  MessagePriority:
+    type: enum
+    variants:
+      - Critical
+      - High
+      - Normal
+      - Low

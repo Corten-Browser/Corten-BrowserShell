@@ -1,0 +1,23 @@
+[package]
+name = "browser_shell"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# Component dependencies
+shared_types = { path = "../shared_types" }
+message_bus = { path = "../message_bus" }
+window_manager = { path = "../window_manager" }
+tab_manager = { path = "../tab_manager" }
+ui_chrome = { path = "../ui_chrome" }
+settings_manager = { path = "../settings_manager" }
+downloads_manager = { path = "../downloads_manager" }
+bookmarks_manager = { path = "../bookmarks_manager" }
+platform_abstraction = { path = "../platform_abstraction" }
+
+# External dependencies
+tokio = { version = "1", features = ["full"] }
+url = "2"
+
+[dev-dependencies]
+tempfile = "3"

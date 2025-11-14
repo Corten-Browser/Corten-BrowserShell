@@ -1,0 +1,19 @@
+name: message_bus
+type: core
+version: 0.1.0
+tech_stack:
+  - rust
+
+dependencies:
+    - shared_types
+
+estimated_size:
+  lines_of_code: 7000
+  tokens: 70000
+
+quality_requirements:
+  min_test_coverage: 80
+  enforce_tdd: true
+  enforce_bdd: false
+
+description: Asynchronous inter-component message routing and delivery with priority handling

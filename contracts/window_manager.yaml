@@ -1,0 +1,62 @@
+contract_name: window_manager
+version: 0.1.0
+description: Browser window lifecycle and management
+
+dependencies:
+  - shared_types
+  - message_bus
+
+api:
+  WindowManager:
+    description: Manages browser window creation and lifecycle
+
+    methods:
+      create_window:
+        description: Create a new browser window
+        params:
+          - name: config
+            type: WindowConfig
+        returns: Result<WindowId, WindowError>
+        async: true
+
+      close_window:
+        description: Close a browser window
+        params:
+          - name: id
+            type: WindowId
+        returns: Result<(), WindowError>
+        async: true
+
+      get_windows:
+        description: Get all active windows
+        params: []
+        returns: Vec<WindowId>
+        async: false
+
+      get_window_config:
+        description: Get window configuration
+        params:
+          - name: id
+            type: WindowId
+        returns: Option<WindowConfig>
+        async: false
+
+      resize_window:
+        description: Resize window to new dimensions
+        params:
+          - name: id
+            type: WindowId
+          - name: width
+            type: u32
+          - name: height
+            type: u32
+        returns: Result<(), WindowError>
+        async: true
+
+      focus_window:
+        description: Bring window to front and focus
+        params:
+          - name: id
+            type: WindowId
+        returns: Result<(), WindowError>
+        async: true

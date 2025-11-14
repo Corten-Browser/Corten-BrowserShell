@@ -1,0 +1,73 @@
+[package]
+name = "corten-browser-tests"
+version = "0.1.0"
+edition = "2021"
+authors = ["CortenBrowser Team"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+# Component dependencies - import REAL components for integration tests
+shared_types = { path = "../components/shared_types" }
+message_bus = { path = "../components/message_bus" }
+platform_abstraction = { path = "../components/platform_abstraction" }
+window_manager = { path = "../components/window_manager" }
+tab_manager = { path = "../components/tab_manager" }
+ui_chrome = { path = "../components/ui_chrome" }
+settings_manager = { path = "../components/settings_manager" }
+downloads_manager = { path = "../components/downloads_manager" }
+bookmarks_manager = { path = "../components/bookmarks_manager" }
+browser_shell = { path = "../components/browser_shell" }
+
+# Async runtime
+tokio = { version = "1.35", features = ["full", "test-util"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Testing utilities
+tempfile = "3.8"
+
+# UUID
+uuid = { version = "1.6", features = ["v4"] }
+
+[lib]
+name = "integration_helpers"
+path = "helpers/lib.rs"
+
+[[test]]
+name = "integration_browser_shell_window_manager"
+path = "integration/test_browser_shell_window_manager.rs"
+
+[[test]]
+name = "integration_browser_shell_tab_manager"
+path = "integration/test_browser_shell_tab_manager.rs"
+
+[[test]]
+name = "integration_browser_shell_settings"
+path = "integration/test_browser_shell_settings.rs"
+
+[[test]]
+name = "integration_browser_shell_bookmarks"
+path = "integration/test_browser_shell_bookmarks.rs"
+
+[[test]]
+name = "integration_message_bus"
+path = "integration/test_message_bus.rs"
+
+[[test]]
+name = "e2e_browser_startup"
+path = "e2e/test_browser_startup.rs"
+
+[[test]]
+name = "e2e_window_tab_navigation"
+path = "e2e/test_window_tab_navigation.rs"
+
+[[test]]
+name = "e2e_settings_persistence"
+path = "e2e/test_settings_persistence.rs"
+
+[[test]]
+name = "e2e_bookmark_workflow"
+path = "e2e/test_bookmark_workflow.rs"

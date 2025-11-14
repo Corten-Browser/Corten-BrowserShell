@@ -1,0 +1,70 @@
+contract_name: bookmarks_manager
+version: 0.1.0
+description: Bookmark storage and management
+
+dependencies:
+  - shared_types
+
+api:
+  BookmarksManager:
+    description: Manages user bookmarks
+
+    methods:
+      add_bookmark:
+        description: Add a new bookmark
+        params:
+          - name: bookmark
+            type: Bookmark
+        returns: Result<BookmarkId, ComponentError>
+        async: true
+
+      remove_bookmark:
+        description: Remove a bookmark
+        params:
+          - name: id
+            type: BookmarkId
+        returns: Result<(), ComponentError>
+        async: true
+
+      update_bookmark:
+        description: Update bookmark details
+        params:
+          - name: id
+            type: BookmarkId
+          - name: bookmark
+            type: Bookmark
+        returns: Result<(), ComponentError>
+        async: true
+
+      get_bookmark:
+        description: Get bookmark by ID
+        params:
+          - name: id
+            type: BookmarkId
+        returns: Option<Bookmark>
+        async: false
+
+      get_all_bookmarks:
+        description: Get all bookmarks
+        params: []
+        returns: Vec<Bookmark>
+        async: true
+
+      search_bookmarks:
+        description: Search bookmarks by query
+        params:
+          - name: query
+            type: String
+        returns: Vec<Bookmark>
+        async: true
+
+types:
+  Bookmark:
+    type: struct
+    fields:
+      id: Option<BookmarkId>
+      url: String
+      title: String
+      folder: Option<String>
+      tags: Vec<String>
+      created_at: u64

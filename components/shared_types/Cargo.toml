@@ -1,0 +1,21 @@
+[package]
+name = "shared_types"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Common types
+uuid = { workspace = true }
+
+[dev-dependencies]
+# Serialization tests
+serde_json = { workspace = true }

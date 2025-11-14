@@ -1,0 +1,21 @@
+name: window_manager
+type: feature
+version: 0.1.0
+tech_stack:
+  - rust
+
+dependencies:
+    - shared_types
+    - message_bus
+    - platform_abstraction
+
+estimated_size:
+  lines_of_code: 8000
+  tokens: 80000
+
+quality_requirements:
+  min_test_coverage: 80
+  enforce_tdd: true
+  enforce_bdd: false
+
+description: Browser window lifecycle management including creation, resizing, focus, and multi-window support

@@ -1,0 +1,62 @@
+contract_name: settings_manager
+version: 0.1.0
+description: User settings and preferences management
+
+dependencies:
+  - shared_types
+
+api:
+  SettingsManager:
+    description: Manages user settings and preferences
+
+    methods:
+      get_setting:
+        description: Get a setting value
+        params:
+          - name: key
+            type: String
+        returns: Result<SettingValue, ComponentError>
+        async: true
+
+      set_setting:
+        description: Set a setting value
+        params:
+          - name: key
+            type: String
+          - name: value
+            type: SettingValue
+        returns: Result<(), ComponentError>
+        async: true
+
+      get_all_settings:
+        description: Get all settings as map
+        params: []
+        returns: Result<HashMap<String, SettingValue>, ComponentError>
+        async: true
+
+      reset_to_defaults:
+        description: Reset all settings to defaults
+        params: []
+        returns: Result<(), ComponentError>
+        async: true
+
+      save:
+        description: Persist settings to disk
+        params: []
+        returns: Result<(), ComponentError>
+        async: true
+
+      load:
+        description: Load settings from disk
+        params: []
+        returns: Result<(), ComponentError>
+        async: true
+
+types:
+  SettingValue:
+    type: enum
+    variants:
+      - String(String)
+      - Integer(i64)
+      - Float(f64)
+      - Boolean(bool)
