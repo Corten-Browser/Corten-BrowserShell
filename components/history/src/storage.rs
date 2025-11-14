@@ -80,7 +80,7 @@ impl HistoryStorage {
     }
 
     /// Get a visit by ID
-    pub async fn get(&self, id: &VisitId) -> Result<Option<HistoryVisit>> {
+    pub async fn get(&self, id: &str) -> Result<Option<HistoryVisit>> {
         let conn = self.conn.lock();
 
         let mut stmt = conn.prepare(
@@ -109,7 +109,7 @@ impl HistoryStorage {
     }
 
     /// Delete a visit by ID
-    pub async fn delete(&mut self, id: &VisitId) -> Result<()> {
+    pub async fn delete(&mut self, id: &str) -> Result<()> {
         let conn = self.conn.lock();
         conn.execute("DELETE FROM history_visits WHERE id = ?1", [id])?;
         Ok(())
@@ -296,7 +296,7 @@ impl HistoryStorage {
     }
 
     /// Update visit duration
-    pub async fn update_visit_duration(&mut self, id: &VisitId, duration: i64) -> Result<()> {
+    pub async fn update_visit_duration(&mut self, id: &str, duration: i64) -> Result<()> {
         let conn = self.conn.lock();
         conn.execute(
             "UPDATE history_visits SET visit_duration = ?1 WHERE id = ?2",

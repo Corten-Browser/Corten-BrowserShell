@@ -45,12 +45,12 @@ impl HistoryManager {
     }
 
     /// Get visit by ID
-    pub async fn get_visit(&self, id: &VisitId) -> Result<Option<HistoryVisit>> {
+    pub async fn get_visit(&self, id: &str) -> Result<Option<HistoryVisit>> {
         self.storage.get(id).await
     }
 
     /// Delete visit
-    pub async fn delete_visit(&mut self, id: &VisitId) -> Result<()> {
+    pub async fn delete_visit(&mut self, id: &str) -> Result<()> {
         self.storage.delete(id).await
     }
 
@@ -104,7 +104,7 @@ impl HistoryManager {
     }
 
     /// Update visit duration (when tab closes)
-    pub async fn update_visit_duration(&mut self, id: &VisitId, duration: i64) -> Result<()> {
+    pub async fn update_visit_duration(&mut self, id: &str, duration: i64) -> Result<()> {
         if duration < 0 {
             return Err(anyhow::anyhow!("Duration cannot be negative"));
         }
