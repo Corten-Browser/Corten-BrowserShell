@@ -1,0 +1,19 @@
+name: history
+version: 0.18.0
+type: feature
+level: 2
+description: Browsing history tracking and management system
+technology_stack: Rust
+estimated_loc: 2,000-3,000
+dependencies:
+  imports:
+  - name: shared_types
+    version: ^0.18.0
+    import_from: components.shared_types
+  - name: user_data
+    version: ^0.18.0
+    import_from: components.user_data
+    uses:
+    - SettingsManager (for storage patterns)
+required_by: []
+api_contract: contracts/history.yaml
