@@ -2,8 +2,7 @@ name: user_data
 version: 0.17.0
 type: feature
 level: 2
-description: Settings persistence, bookmarks management, downloads tracking, and history
-  storage
+description: Settings persistence, bookmarks management, downloads tracking, and history storage
 technology_stack: Rust, SQLite
 estimated_loc: 8,000-10,000
 dependencies:
@@ -14,6 +13,33 @@ dependencies:
   - name: message_bus
     version: ^0.17.0
     import_from: components.message_bus
+user_facing_features:
+  public_api:
+    - class: SettingsManager
+      module: user_data::settings
+      methods:
+        - new
+        - set
+        - get
+        - delete
+        - list_all
+        - clear_all
+      description: Key-value settings storage with SQLite persistence
+    - class: BookmarksManager
+      module: user_data::bookmarks
+      methods:
+        - new
+      description: Hierarchical bookmarks with folder support (stub for now)
+    - class: DownloadsTracker
+      module: user_data::downloads
+      methods:
+        - new
+      description: Download state tracking with resume support (stub for now)
+    - class: HistoryManager
+      module: user_data::history
+      methods:
+        - new
+      description: Browsing history with search capability (stub for now)
 api:
   provides: []
   requires: []
