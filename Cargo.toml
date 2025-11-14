@@ -13,6 +13,7 @@ members = [
     "components/bookmarks_manager",
     "components/browser_shell",
     "components/shell_app",
+    "tests",
 ]
 
 [workspace.package]
