@@ -1,0 +1,38 @@
+[package]
+name = "browser_shell"
+version = "0.17.0"
+edition = "2021"
+authors = ["Corten Browser Team"]
+description = "Main browser orchestration, component lifecycle coordination, and public API exposure"
+
+[dependencies]
+# Project components - all dependencies
+shared_types = { path = "../shared_types" }
+message_bus = { path = "../message_bus" }
+platform_abstraction = { path = "../platform_abstraction" }
+window_manager = { path = "../window_manager" }
+tab_manager = { path = "../tab_manager" }
+ui_chrome = { path = "../ui_chrome" }
+user_data = { path = "../user_data" }
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Collections and synchronization
+parking_lot = "0.12"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[lib]
+name = "browser_shell"
+path = "src/lib.rs"
