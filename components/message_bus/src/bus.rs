@@ -1,8 +1,6 @@
 //! MessageBus implementation for async inter-component communication
 
 use crate::types::{ComponentMessage, ComponentResponse};
-use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 use shared_types::ComponentError;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -10,6 +8,7 @@ use tokio::sync::{mpsc, RwLock};
 
 /// A message wrapper that includes priority and routing information
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // Used for message routing (will be fully utilized in future enhancements)
 struct RoutedMessage {
     /// The target component ID (None for broadcast)
     target: Option<String>,
@@ -21,6 +20,7 @@ struct RoutedMessage {
 
 /// Component registration information
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // Fields used for component management (will be fully utilized in future enhancements)
 struct ComponentInfo {
     /// Unique component identifier
     id: String,
