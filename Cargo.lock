@@ -1022,6 +1022,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dirs"
+version = "5.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44c45a9d03d6676652bcb5e724c7e988de1acad23a711b5217ab9cbecbec2225"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
 name = "dirs-sys"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3179,14 +3188,20 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
+ "browser_shell",
  "clap",
+ "dirs",
+ "eframe",
+ "egui",
  "predicates",
  "serde",
  "shared_types",
+ "tempfile",
  "thiserror 1.0.69",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "ui_chrome",
 ]
 
 [[package]]
