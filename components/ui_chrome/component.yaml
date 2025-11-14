@@ -15,8 +15,78 @@ dependencies:
     version: ^0.17.0
     import_from: components.message_bus
 api:
-  provides: []
+  provides:
+    - AddressBar widget (URL input and validation)
+    - TabBar widget (tab management)
+    - Toolbar widget (navigation buttons)
+    - MenuSystem (application menu structure)
+    - ThemeManager (light/dark/auto themes)
+    - ShortcutHandler (keyboard shortcut handling)
   requires: []
+user_facing_features:
+  public_api:
+    - class: AddressBar
+      module: components.ui_chrome.widgets.address_bar
+      methods:
+        - new
+        - get_text
+        - set_text
+        - validate_url
+        - is_loading
+        - set_loading
+        - is_secure
+      description: Address bar widget with URL validation and security indicators
+
+    - class: TabBar
+      module: components.ui_chrome.widgets.tab_bar
+      methods:
+        - new
+        - add_tab
+        - close_tab
+        - set_active_tab
+        - get_tab_info
+        - update_tab_info
+      description: Tab bar widget for tab management
+
+    - class: Toolbar
+      module: components.ui_chrome.widgets.toolbar
+      methods:
+        - new
+        - handle_click
+        - set_button_enabled
+        - update_navigation_state
+        - set_loading
+      description: Browser toolbar with navigation buttons
+
+    - class: MenuSystem
+      module: components.ui_chrome.menu
+      methods:
+        - new
+        - add_menu
+        - add_menu_item
+        - get_menu
+        - set_item_enabled
+      description: Application menu system
+
+    - class: ThemeManager
+      module: components.ui_chrome.theme
+      methods:
+        - new
+        - set_theme
+        - current_theme
+        - get_colors
+        - toggle_theme
+      description: UI theme management (light/dark/auto)
+
+    - class: ShortcutHandler
+      module: components.ui_chrome.shortcuts
+      methods:
+        - new
+        - register
+        - match_shortcut
+        - unregister
+        - register_defaults
+      description: Keyboard shortcut handler
 quality:
   min_coverage: 80
   tdd_required: true
