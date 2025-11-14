@@ -1,4 +1,4 @@
-use downloads_manager::{DownloadsManager, DownloadStatus};
+use downloads_manager::{DownloadStatus, DownloadsManager};
 use shared_types::DownloadId;
 
 #[tokio::test]

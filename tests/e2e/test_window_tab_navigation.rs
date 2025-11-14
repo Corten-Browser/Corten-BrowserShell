@@ -22,7 +22,10 @@ async fn test_window_tab_navigation_complete_workflow() {
     // Step 1: Initialize browser
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Step 2: Create initial window
     let window1 = shell
@@ -78,7 +81,10 @@ async fn test_multiple_windows_with_tabs() {
     // Initialize
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Window 1 with 2 tabs
     let window1 = shell
@@ -131,10 +137,16 @@ async fn test_navigation_sequence_in_single_tab() {
     // Initialize
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Create window and tab
-    shell.new_window(None).await.expect("Window creation failed");
+    shell
+        .new_window(None)
+        .await
+        .expect("Window creation failed");
     let tab_id = shell.new_tab(None).await.expect("Tab creation failed");
 
     // Navigate through multiple URLs
@@ -168,12 +180,21 @@ async fn test_empty_tab_creation_then_navigation() {
     // Initialize
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
-    shell.new_window(None).await.expect("Window creation failed");
+    shell
+        .new_window(None)
+        .await
+        .expect("Window creation failed");
 
     // Create empty tab
-    let tab_id = shell.new_tab(None).await.expect("Empty tab creation failed");
+    let tab_id = shell
+        .new_tab(None)
+        .await
+        .expect("Empty tab creation failed");
 
     // Now navigate (user types URL)
     shell
@@ -201,9 +222,15 @@ async fn test_rapid_tab_creation_and_navigation() {
     // Initialize
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
-    shell.new_window(None).await.expect("Window creation failed");
+    shell
+        .new_window(None)
+        .await
+        .expect("Window creation failed");
 
     // Rapidly create 10 tabs and navigate
     for i in 1..=10 {

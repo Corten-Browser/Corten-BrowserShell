@@ -21,7 +21,10 @@ async fn test_browser_shell_creates_window_via_window_manager() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Act
     let result = shell.new_window(None).await;
@@ -47,7 +50,10 @@ async fn test_browser_shell_creates_window_with_custom_config() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     let custom_config = WindowConfig {
         title: "Test Window".to_string(),
@@ -81,12 +87,24 @@ async fn test_browser_shell_creates_multiple_windows() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Act
-    let window1 = shell.new_window(None).await.expect("Window 1 creation failed");
-    let window2 = shell.new_window(None).await.expect("Window 2 creation failed");
-    let window3 = shell.new_window(None).await.expect("Window 3 creation failed");
+    let window1 = shell
+        .new_window(None)
+        .await
+        .expect("Window 1 creation failed");
+    let window2 = shell
+        .new_window(None)
+        .await
+        .expect("Window 2 creation failed");
+    let window3 = shell
+        .new_window(None)
+        .await
+        .expect("Window 3 creation failed");
 
     // Assert
     assert_ne!(window1, window2, "Window IDs should be unique");
@@ -110,7 +128,10 @@ async fn test_browser_shell_window_creation_requires_initialization() {
     let result = shell.new_window(None).await;
 
     // Assert
-    assert!(result.is_err(), "Window creation without initialization should fail");
+    assert!(
+        result.is_err(),
+        "Window creation without initialization should fail"
+    );
     match result {
         Err(ComponentError::InvalidState(_)) => {
             // Expected error type
@@ -143,7 +164,10 @@ async fn test_browser_shell_uses_default_window_config() {
     config.window_config = default_config.clone();
 
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Act - create window without providing config (should use default)
     let result = shell.new_window(None).await;
@@ -164,7 +188,10 @@ async fn test_browser_shell_window_manager_integration_after_shutdown() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Act
     shell.shutdown().await.expect("Shutdown failed");

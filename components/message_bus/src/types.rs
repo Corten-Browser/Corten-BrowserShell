@@ -56,12 +56,13 @@ pub enum ComponentResponse {
 /// Priority levels for message processing
 ///
 /// Higher priority messages are processed first in the message queue.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
 pub enum MessagePriority {
     /// Lowest priority - background tasks
     Low,
 
     /// Normal priority - standard operations
+    #[default]
     Normal,
 
     /// High priority - user-initiated actions
@@ -69,12 +70,6 @@ pub enum MessagePriority {
 
     /// Highest priority - critical system operations
     Critical,
-}
-
-impl Default for MessagePriority {
-    fn default() -> Self {
-        Self::Normal
-    }
 }
 
 #[cfg(test)]

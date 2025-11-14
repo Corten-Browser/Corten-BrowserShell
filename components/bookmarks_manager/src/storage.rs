@@ -1,12 +1,12 @@
 //! Bookmark storage implementation with YAML persistence
 
 use crate::Bookmark;
+use chrono::Utc;
 use shared_types::{BookmarkId, ComponentError};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use chrono::Utc;
 
 /// Manages bookmark storage, retrieval, and search
 pub struct BookmarksManager {
@@ -304,28 +304,34 @@ impl BookmarksManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn import_from_json(&mut self, path: impl AsRef<Path>) -> Result<usize, ComponentError> {
+    pub async fn import_from_json(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> Result<usize, ComponentError> {
         let contents = fs::read_to_string(path.as_ref()).await.map_err(|e| {
             ComponentError::InvalidState(format!("Failed to read JSON import file: {}", e))
         })?;
 
-        let json_data: serde_json::Value = serde_json::from_str(&contents).map_err(|e| {
-            ComponentError::InvalidState(format!("Failed to parse JSON: {}", e))
-        })?;
+        let json_data: serde_json::Value = serde_json::from_str(&contents)
+            .map_err(|e| ComponentError::InvalidState(format!("Failed to parse JSON: {}", e)))?;
 
         // Validate JSON structure
         let bookmarks_array = json_data
             .get("bookmarks")
             .and_then(|v| v.as_array())
             .ok_or_else(|| {
-                ComponentError::InvalidState("Invalid JSON structure: missing 'bookmarks' array".to_string())
+                ComponentError::InvalidState(
+                    "Invalid JSON structure: missing 'bookmarks' array".to_string(),
+                )
             })?;
 
         // Parse bookmarks
-        let imported_bookmarks: Vec<Bookmark> = serde_json::from_value(serde_json::Value::Array(bookmarks_array.clone()))
-            .map_err(|e| {
-                ComponentError::InvalidState(format!("Failed to parse bookmarks from JSON: {}", e))
-            })?;
+        let imported_bookmarks: Vec<Bookmark> = serde_json::from_value(serde_json::Value::Array(
+            bookmarks_array.clone(),
+        ))
+        .map_err(|e| {
+            ComponentError::InvalidState(format!("Failed to parse bookmarks from JSON: {}", e))
+        })?;
 
         // Get existing URLs to avoid duplicates
         let existing_urls: std::collections::HashSet<String> =

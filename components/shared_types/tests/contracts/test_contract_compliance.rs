@@ -2,7 +2,6 @@
 ///
 /// These tests verify that all types defined in contracts/shared_types.yaml
 /// are implemented and can be used as specified in the contract.
-
 use shared_types::*;
 
 #[test]
@@ -128,7 +127,8 @@ fn test_contract_all_types_serializable() {
     let _json = serde_json::to_string(&process_id).expect("ProcessId should serialize");
 
     let render_surface_id = RenderSurfaceId::new();
-    let _json = serde_json::to_string(&render_surface_id).expect("RenderSurfaceId should serialize");
+    let _json =
+        serde_json::to_string(&render_surface_id).expect("RenderSurfaceId should serialize");
 
     let download_id = DownloadId::new();
     let _json = serde_json::to_string(&download_id).expect("DownloadId should serialize");

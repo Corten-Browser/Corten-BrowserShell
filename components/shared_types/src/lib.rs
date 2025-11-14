@@ -4,13 +4,13 @@
 //! all browser shell components, including ID types, configuration structs,
 //! keyboard shortcuts, and error types.
 
-mod ids;
-mod window_config;
-mod keyboard_shortcut;
 mod errors;
+mod ids;
+mod keyboard_shortcut;
+mod window_config;
 
 // Re-export all public types
-pub use ids::*;
-pub use window_config::*;
-pub use keyboard_shortcut::*;
 pub use errors::*;
+pub use ids::*;
+pub use keyboard_shortcut::*;
+pub use window_config::*;

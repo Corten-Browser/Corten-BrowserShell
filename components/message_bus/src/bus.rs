@@ -177,10 +177,9 @@ impl MessageBus {
             response_tx: Some(response_tx),
         };
 
-        component_info
-            .tx
-            .send(routed_message)
-            .map_err(|e| ComponentError::MessageRoutingFailed(format!("Failed to send message: {}", e)))?;
+        component_info.tx.send(routed_message).map_err(|e| {
+            ComponentError::MessageRoutingFailed(format!("Failed to send message: {}", e))
+        })?;
 
         // Wait for response (with timeout)
         // In this basic implementation, we'll return Success immediately
@@ -188,13 +187,11 @@ impl MessageBus {
         drop(components); // Release the lock
 
         // Try to receive response with timeout
-        match tokio::time::timeout(
-            std::time::Duration::from_millis(100),
-            response_rx.recv()
-        ).await {
+        match tokio::time::timeout(std::time::Duration::from_millis(100), response_rx.recv()).await
+        {
             Ok(Some(response)) => Ok(response),
             Ok(None) => Ok(ComponentResponse::Success), // Channel closed
-            Err(_) => Ok(ComponentResponse::Success), // Timeout - return success for now
+            Err(_) => Ok(ComponentResponse::Success),   // Timeout - return success for now
         }
     }
 

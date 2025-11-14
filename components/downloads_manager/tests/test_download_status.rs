@@ -1,4 +1,4 @@
-use downloads_manager::{DownloadStatus};
+use downloads_manager::DownloadStatus;
 
 #[test]
 fn test_download_status_pending() {

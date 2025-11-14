@@ -157,7 +157,9 @@ async fn test_import_from_json_validates_structure() {
     let invalid_json_path = temp_dir.path().join("invalid.json");
 
     // Write invalid JSON
-    tokio::fs::write(&invalid_json_path, b"{ invalid json }").await.unwrap();
+    tokio::fs::write(&invalid_json_path, b"{ invalid json }")
+        .await
+        .unwrap();
 
     let mut manager = BookmarksManager::new(temp_dir.path().to_path_buf());
     let result = manager.import_from_json(&invalid_json_path).await;
@@ -222,7 +224,10 @@ async fn test_backup_bookmarks_preserves_all_data() {
 
     // Verify backup can be imported
     let mut restore_manager = BookmarksManager::new(temp_dir.path().join("restore"));
-    let count = restore_manager.import_from_json(&backup_path).await.unwrap();
+    let count = restore_manager
+        .import_from_json(&backup_path)
+        .await
+        .unwrap();
 
     assert_eq!(count, 2);
     let restored = restore_manager.get_all_bookmarks().await;

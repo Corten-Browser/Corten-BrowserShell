@@ -21,7 +21,10 @@ async fn test_browser_shell_creates_tab_via_tab_manager() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Create window first (required for tab creation)
     shell
@@ -53,7 +56,10 @@ async fn test_browser_shell_creates_tab_with_url() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     shell
         .new_window(None)
@@ -66,10 +72,7 @@ async fn test_browser_shell_creates_tab_with_url() {
     let result = shell.new_tab(Some(test_url.to_string())).await;
 
     // Assert
-    assert!(
-        result.is_ok(),
-        "Tab creation with URL should succeed"
-    );
+    assert!(result.is_ok(), "Tab creation with URL should succeed");
 }
 
 #[tokio::test]
@@ -81,7 +84,10 @@ async fn test_browser_shell_tab_creation_requires_active_window() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Act - try to create tab without creating window first
     let result = shell.new_tab(None).await;
@@ -111,7 +117,10 @@ async fn test_browser_shell_creates_multiple_tabs() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     shell
         .new_window(None)
@@ -141,7 +150,10 @@ async fn test_browser_shell_navigate_active_tab() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     shell
         .new_window(None)
@@ -167,7 +179,10 @@ async fn test_browser_shell_navigate_requires_active_tab() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Create window but no tab
     shell
@@ -179,10 +194,7 @@ async fn test_browser_shell_navigate_requires_active_tab() {
     let result = shell.navigate("https://example.com".to_string()).await;
 
     // Assert
-    assert!(
-        result.is_err(),
-        "Navigation without active tab should fail"
-    );
+    assert!(result.is_err(), "Navigation without active tab should fail");
     match result {
         Err(ComponentError::InvalidState(msg)) => {
             assert!(
@@ -203,7 +215,10 @@ async fn test_browser_shell_tab_navigation_flow() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Act & Assert - complete flow
     let window_id = shell
@@ -237,7 +252,10 @@ async fn test_browser_shell_multiple_tabs_in_same_window() {
     // Arrange
     let (config, _temp_dir) = create_test_config();
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     let window_id = shell
         .new_window(None)
@@ -245,11 +263,13 @@ async fn test_browser_shell_multiple_tabs_in_same_window() {
         .expect("Window creation failed");
 
     // Act - create multiple tabs
-    let tab1 = shell.new_tab(Some("https://example.com".to_string()))
+    let tab1 = shell
+        .new_tab(Some("https://example.com".to_string()))
         .await
         .expect("Tab 1 failed");
 
-    let tab2 = shell.new_tab(Some("https://rust-lang.org".to_string()))
+    let tab2 = shell
+        .new_tab(Some("https://rust-lang.org".to_string()))
         .await
         .expect("Tab 2 failed");
 

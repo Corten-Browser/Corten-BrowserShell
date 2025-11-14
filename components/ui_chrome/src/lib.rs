@@ -4,7 +4,7 @@
 //!
 //! This component provides the browser chrome using egui for rendering the UI.
 
-use shared_types::{ComponentError, KeyboardShortcut, TabId};
+use shared_types::{ComponentError, DownloadId, KeyboardShortcut, TabId};
 use std::collections::{HashMap, HashSet};
 
 /// State for a single tab
@@ -27,6 +27,38 @@ pub enum ContextMenuType {
     Tab(TabId),
     /// Context menu for the address bar
     AddressBar,
+}
+
+/// Download status for UI display
+#[derive(Debug, Clone, PartialEq)]
+pub enum DownloadDisplayStatus {
+    /// Download is in progress
+    Downloading,
+    /// Download is paused
+    Paused,
+    /// Download completed successfully
+    Complete,
+    /// Download failed
+    Failed(String),
+}
+
+/// Download information for UI display
+#[derive(Debug, Clone)]
+pub struct DownloadDisplay {
+    /// Unique identifier
+    pub id: DownloadId,
+    /// Filename
+    pub filename: String,
+    /// Downloaded bytes
+    pub downloaded_bytes: u64,
+    /// Total bytes
+    pub total_bytes: u64,
+    /// Download speed in bytes/sec
+    pub bytes_per_second: u64,
+    /// ETA in seconds
+    pub eta_seconds: u64,
+    /// Status
+    pub status: DownloadDisplayStatus,
 }
 
 impl TabState {
@@ -93,6 +125,9 @@ pub struct UiChrome {
     /// Number of active downloads
     download_count: usize,
 
+    /// List of downloads for display
+    downloads: Vec<DownloadDisplay>,
+
     /// Bookmarked URLs
     bookmarks: HashSet<String>,
 }
@@ -118,6 +153,7 @@ impl UiChrome {
             active_context_menu: None,
             hover_url: None,
             download_count: 0,
+            downloads: Vec::new(),
             bookmarks: HashSet::new(),
         }
     }
@@ -450,6 +486,102 @@ impl UiChrome {
         self.download_count
     }
 
+    /// Update the downloads list for display
+    pub fn set_downloads(&mut self, downloads: Vec<DownloadDisplay>) {
+        self.download_count = downloads
+            .iter()
+            .filter(|d| {
+                matches!(
+                    d.status,
+                    DownloadDisplayStatus::Downloading | DownloadDisplayStatus::Paused
+                )
+            })
+            .count();
+        self.downloads = downloads;
+    }
+
+    /// Get the current downloads list
+    pub fn get_downloads(&self) -> &[DownloadDisplay] {
+        &self.downloads
+    }
+
+    /// Clear completed downloads from the list
+    pub fn clear_completed_downloads(&mut self) {
+        self.downloads
+            .retain(|d| !matches!(d.status, DownloadDisplayStatus::Complete));
+        self.download_count = self
+            .downloads
+            .iter()
+            .filter(|d| {
+                matches!(
+                    d.status,
+                    DownloadDisplayStatus::Downloading | DownloadDisplayStatus::Paused
+                )
+            })
+            .count();
+    }
+
+    /// Format file size in human-readable format (B, KB, MB, GB)
+    fn format_size(bytes: u64) -> String {
+        const KB: u64 = 1024;
+        const MB: u64 = KB * 1024;
+        const GB: u64 = MB * 1024;
+
+        if bytes >= GB {
+            format!("{:.1} GB", bytes as f64 / GB as f64)
+        } else if bytes >= MB {
+            format!("{:.1} MB", bytes as f64 / MB as f64)
+        } else if bytes >= KB {
+            format!("{:.1} KB", bytes as f64 / KB as f64)
+        } else {
+            format!("{} B", bytes)
+        }
+    }
+
+    /// Format download speed in human-readable format (KB/s, MB/s)
+    fn format_speed(bytes_per_second: u64) -> String {
+        const KB: u64 = 1024;
+        const MB: u64 = KB * 1024;
+
+        if bytes_per_second >= MB {
+            format!("{:.1} MB/s", bytes_per_second as f64 / MB as f64)
+        } else if bytes_per_second >= KB {
+            format!("{:.1} KB/s", bytes_per_second as f64 / KB as f64)
+        } else if bytes_per_second > 0 {
+            format!("{} B/s", bytes_per_second)
+        } else {
+            String::from("-- KB/s")
+        }
+    }
+
+    /// Format time duration in human-readable format (seconds, minutes, hours)
+    fn format_time(seconds: u64) -> String {
+        const MINUTE: u64 = 60;
+        const HOUR: u64 = MINUTE * 60;
+
+        if seconds >= HOUR {
+            let hours = seconds / HOUR;
+            let minutes = (seconds % HOUR) / MINUTE;
+            if minutes > 0 {
+                format!("{}h {}m", hours, minutes)
+            } else {
+                format!("{}h", hours)
+            }
+        } else if seconds >= MINUTE {
+            let minutes = seconds / MINUTE;
+            let secs = seconds % MINUTE;
+            if secs > 0 {
+                format!("{}m {}s", minutes, secs)
+            } else {
+                format!("{}m", minutes)
+            }
+        } else if seconds > 0 {
+            format!("{}s", seconds)
+        } else {
+            String::from("--")
+        }
+    }
+
     /// Bookmark the current page
     ///
     /// # Errors
@@ -613,19 +745,150 @@ impl UiChrome {
 
         if self.downloads_panel_visible {
             egui::SidePanel::left("downloads_panel")
-                .default_width(250.0)
+                .default_width(400.0)
                 .show(ctx, |ui| {
                     ui.heading("⬇ Downloads");
                     ui.separator();
-                    if self.download_count > 0 {
-                        ui.label(format!("Active downloads: {}", self.download_count));
+
+                    // Check if there are any downloads
+                    if self.downloads.is_empty() {
+                        ui.vertical_centered(|ui| {
+                            ui.add_space(20.0);
+                            ui.label("No downloads");
+                            ui.add_space(20.0);
+                        });
                     } else {
-                        ui.label("No active downloads");
+                        // Render download list with scroll area
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            // Track which download actions to perform (avoid borrow issues)
+                            let mut pause_id: Option<DownloadId> = None;
+                            let mut resume_id: Option<DownloadId> = None;
+                            let mut cancel_id: Option<DownloadId> = None;
+                            let mut open_id: Option<DownloadId> = None;
+
+                            for download in &self.downloads {
+                                ui.group(|ui| {
+                                    // Filename as header
+                                    ui.strong(&download.filename);
+
+                                    // Progress bar
+                                    let progress = if download.total_bytes > 0 {
+                                        download.downloaded_bytes as f32
+                                            / download.total_bytes as f32
+                                    } else {
+                                        0.0
+                                    };
+
+                                    let progress_bar =
+                                        egui::ProgressBar::new(progress).show_percentage();
+                                    ui.add(progress_bar);
+
+                                    // Size information: "4.5 MB / 10 MB"
+                                    let size_info = if download.total_bytes > 0 {
+                                        format!(
+                                            "{} / {}",
+                                            Self::format_size(download.downloaded_bytes),
+                                            Self::format_size(download.total_bytes)
+                                        )
+                                    } else {
+                                        Self::format_size(download.downloaded_bytes)
+                                    };
+                                    ui.label(size_info);
+
+                                    // Speed and ETA (only for downloading status)
+                                    if matches!(download.status, DownloadDisplayStatus::Downloading)
+                                    {
+                                        ui.horizontal(|ui| {
+                                            // Download speed
+                                            ui.label(format!(
+                                                "Speed: {}",
+                                                Self::format_speed(download.bytes_per_second)
+                                            ));
+
+                                            ui.separator();
+
+                                            // ETA
+                                            if download.eta_seconds > 0 {
+                                                ui.label(format!(
+                                                    "ETA: {}",
+                                                    Self::format_time(download.eta_seconds)
+                                                ));
+                                            }
+                                        });
+                                    }
+
+                                    // Status and action buttons
+                                    ui.horizontal(|ui| {
+                                        // Status indicator
+                                        let status_text = match &download.status {
+                                            DownloadDisplayStatus::Downloading => "⬇ Downloading",
+                                            DownloadDisplayStatus::Paused => "⏸ Paused",
+                                            DownloadDisplayStatus::Complete => "✓ Complete",
+                                            DownloadDisplayStatus::Failed(msg) => {
+                                                &format!("✗ Failed: {}", msg)
+                                            }
+                                        };
+                                        ui.label(status_text);
+
+                                        ui.with_layout(
+                                            egui::Layout::right_to_left(egui::Align::Center),
+                                            |ui| {
+                                                // Action buttons based on status
+                                                match &download.status {
+                                                    DownloadDisplayStatus::Downloading => {
+                                                        if ui.small_button("⏸ Pause").clicked() {
+                                                            pause_id = Some(download.id);
+                                                        }
+                                                        if ui.small_button("✕ Cancel").clicked() {
+                                                            cancel_id = Some(download.id);
+                                                        }
+                                                    }
+                                                    DownloadDisplayStatus::Paused => {
+                                                        if ui.small_button("▶ Resume").clicked() {
+                                                            resume_id = Some(download.id);
+                                                        }
+                                                        if ui.small_button("✕ Cancel").clicked() {
+                                                            cancel_id = Some(download.id);
+                                                        }
+                                                    }
+                                                    DownloadDisplayStatus::Complete => {
+                                                        if ui.small_button("📂 Open").clicked() {
+                                                            open_id = Some(download.id);
+                                                        }
+                                                    }
+                                                    DownloadDisplayStatus::Failed(_) => {
+                                                        // No action buttons for failed downloads
+                                                    }
+                                                }
+                                            },
+                                        );
+                                    });
+                                });
+
+                                ui.add_space(5.0);
+                            }
+
+                            // TODO: Process download actions (pause_id, resume_id, cancel_id, open_id)
+                            // These would be sent via message bus to the downloads_manager
+                            // For now, we just collect them but don't process
+                            let _ = (pause_id, resume_id, cancel_id, open_id);
+                        });
                     }
+
                     ui.separator();
-                    if ui.button("Close").clicked() {
-                        self.toggle_downloads_panel();
-                    }
+
+                    // Bottom buttons
+                    ui.horizontal(|ui| {
+                        if ui.button("Clear Completed").clicked() {
+                            self.clear_completed_downloads();
+                        }
+
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.button("Close").clicked() {
+                                self.toggle_downloads_panel();
+                            }
+                        });
+                    });
                 });
         }
 

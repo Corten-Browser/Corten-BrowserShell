@@ -1,6 +1,6 @@
 //! BrowserApp - GUI application wrapper for browser shell and UI chrome
 
-use crate::{AppConfig, init_logging};
+use crate::{init_logging, AppConfig};
 use browser_shell::{BrowserShell, ShellConfig};
 use shared_types::{ComponentError, WindowConfig};
 use std::sync::Arc;
@@ -10,6 +10,10 @@ use ui_chrome::UiChrome;
 /// Main browser application that integrates browser_shell and ui_chrome with eframe
 pub struct BrowserApp {
     /// Browser shell instance
+    ///
+    /// Note: Currently unused but kept for future UI-to-shell interaction.
+    /// Will be accessed when implementing features like navigation, page control, etc.
+    #[allow(dead_code)]
     browser_shell: Arc<RwLock<BrowserShell>>,
 
     /// UI chrome instance
@@ -39,17 +43,15 @@ impl BrowserApp {
         let mut browser_shell = BrowserShell::new();
 
         // Create shell configuration from app config
-        let user_data_dir = config.user_data_dir
-            .clone()
-            .unwrap_or_else(|| {
-                // Default user data directory
-                dirs::data_local_dir()
-                    .unwrap_or_else(|| std::env::current_dir().unwrap())
-                    .join("corten-browser")
-                    .to_str()
-                    .unwrap()
-                    .to_string()
-            });
+        let user_data_dir = config.user_data_dir.clone().unwrap_or_else(|| {
+            // Default user data directory
+            dirs::data_local_dir()
+                .unwrap_or_else(|| std::env::current_dir().unwrap())
+                .join("corten-browser")
+                .to_str()
+                .unwrap()
+                .to_string()
+        });
 
         let window_config = WindowConfig {
             title: "CortenBrowser".to_string(),
@@ -113,8 +115,16 @@ impl BrowserApp {
         let native_options = eframe::NativeOptions {
             viewport: egui::ViewportBuilder::default()
                 .with_inner_size([
-                    if self.config.fullscreen { 1920.0 } else { 1280.0 },
-                    if self.config.fullscreen { 1080.0 } else { 720.0 },
+                    if self.config.fullscreen {
+                        1920.0
+                    } else {
+                        1280.0
+                    },
+                    if self.config.fullscreen {
+                        1080.0
+                    } else {
+                        720.0
+                    },
                 ])
                 .with_fullscreen(self.config.fullscreen),
             ..Default::default()

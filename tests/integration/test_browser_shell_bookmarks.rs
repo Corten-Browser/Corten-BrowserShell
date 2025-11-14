@@ -43,7 +43,10 @@ async fn test_browser_shell_saves_bookmarks_on_shutdown() {
     let user_data_path = PathBuf::from(&config.user_data_dir);
 
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Act
     let result = shell.shutdown().await;
@@ -122,7 +125,10 @@ async fn test_browser_shell_bookmarks_with_custom_user_data_dir() {
     let mut shell = BrowserShell::new();
 
     // Act
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
     shell.shutdown().await.expect("Shutdown failed");
 
     // Assert

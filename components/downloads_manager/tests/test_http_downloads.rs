@@ -1,4 +1,4 @@
-use downloads_manager::{DownloadsManager, DownloadStatus};
+use downloads_manager::{DownloadStatus, DownloadsManager};
 use std::path::PathBuf;
 use tokio::fs;
 
@@ -18,10 +18,15 @@ async fn test_downloads_directory_creation() {
     // Clean up if exists
     let _ = fs::remove_dir_all(&test_dir).await;
 
-    let result = manager.start_download(url, Some(destination.to_string_lossy().to_string())).await;
+    let result = manager
+        .start_download(url, Some(destination.to_string_lossy().to_string()))
+        .await;
 
     // Should succeed even if directory doesn't exist
-    assert!(result.is_ok(), "Download should start even if directory doesn't exist");
+    assert!(
+        result.is_ok(),
+        "Download should start even if directory doesn't exist"
+    );
 
     // Give time for download to start and create directory
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
@@ -44,7 +49,10 @@ async fn test_real_download_progress_tracking() {
     // Clean up
     let _ = fs::remove_dir_all(&test_dir).await;
 
-    let download_id = manager.start_download(url, Some(destination.to_string_lossy().to_string())).await.unwrap();
+    let download_id = manager
+        .start_download(url, Some(destination.to_string_lossy().to_string()))
+        .await
+        .unwrap();
 
     // Track progress
     let mut last_progress = 0u64;
@@ -60,14 +68,20 @@ async fn test_real_download_progress_tracking() {
             }
 
             // Break if complete or failed
-            if matches!(info.status, DownloadStatus::Complete | DownloadStatus::Failed(_)) {
+            if matches!(
+                info.status,
+                DownloadStatus::Complete | DownloadStatus::Failed(_)
+            ) {
                 break;
             }
         }
     }
 
     // Should have seen progress updates (or completed immediately)
-    assert!(progress_updates > 0 || last_progress > 0, "Should track download progress");
+    assert!(
+        progress_updates > 0 || last_progress > 0,
+        "Should track download progress"
+    );
 
     // Clean up
     let _ = fs::remove_dir_all(&test_dir).await;
@@ -85,7 +99,10 @@ async fn test_automatic_filename_from_url() {
     let info = manager.get_download_info(download_id).await.unwrap();
 
     // Should have extracted a filename
-    assert!(!info.filename.is_empty(), "Should extract filename from URL");
+    assert!(
+        !info.filename.is_empty(),
+        "Should extract filename from URL"
+    );
     assert!(!info.destination.is_empty(), "Should have destination path");
 }
 
@@ -110,7 +127,10 @@ async fn test_network_error_handling() {
     if let Some(info) = manager.get_download_info(download_id).await {
         // Should either be failed or still attempting
         assert!(
-            matches!(info.status, DownloadStatus::Failed(_) | DownloadStatus::Downloading),
+            matches!(
+                info.status,
+                DownloadStatus::Failed(_) | DownloadStatus::Downloading
+            ),
             "Should handle network errors gracefully"
         );
     }
@@ -128,7 +148,10 @@ async fn test_file_saved_to_disk() {
     // Clean up
     let _ = fs::remove_dir_all(&test_dir).await;
 
-    let download_id = manager.start_download(url, Some(destination.to_string_lossy().to_string())).await.unwrap();
+    let download_id = manager
+        .start_download(url, Some(destination.to_string_lossy().to_string()))
+        .await
+        .unwrap();
 
     // Wait for download to complete
     for _ in 0..20 {
@@ -168,7 +191,10 @@ async fn test_pause_resume_real_download() {
     // Clean up
     let _ = fs::remove_dir_all(&test_dir).await;
 
-    let download_id = manager.start_download(url, Some(destination.to_string_lossy().to_string())).await.unwrap();
+    let download_id = manager
+        .start_download(url, Some(destination.to_string_lossy().to_string()))
+        .await
+        .unwrap();
 
     // Let it start downloading
     tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;

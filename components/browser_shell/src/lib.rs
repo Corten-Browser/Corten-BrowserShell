@@ -355,7 +355,10 @@ mod tests {
 
         let result = shell.shutdown().await;
 
-        assert!(result.is_ok(), "Shutdown should succeed even without initialization");
+        assert!(
+            result.is_ok(),
+            "Shutdown should succeed even without initialization"
+        );
     }
 
     #[tokio::test]
@@ -364,7 +367,10 @@ mod tests {
 
         let result = shell.new_window(None).await;
 
-        assert!(result.is_err(), "Creating window without initialization should fail");
+        assert!(
+            result.is_err(),
+            "Creating window without initialization should fail"
+        );
         match result {
             Err(ComponentError::InvalidState(_)) => (),
             _ => panic!("Expected InvalidState error"),
@@ -386,7 +392,10 @@ mod tests {
 
         let result = shell.new_tab(None).await;
 
-        assert!(result.is_err(), "Creating tab without active window should fail");
+        assert!(
+            result.is_err(),
+            "Creating tab without active window should fail"
+        );
         match result {
             Err(ComponentError::InvalidState(_)) => (),
             _ => panic!("Expected InvalidState error"),

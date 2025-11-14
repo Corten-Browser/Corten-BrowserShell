@@ -170,7 +170,10 @@ async fn test_different_user_data_dirs_have_independent_bookmarks() {
         };
 
         let mut shell = BrowserShell::new();
-        shell.initialize(config).await.expect("Profile 1 init failed");
+        shell
+            .initialize(config)
+            .await
+            .expect("Profile 1 init failed");
         shell.shutdown().await.expect("Profile 1 shutdown failed");
 
         assert!(
@@ -190,7 +193,10 @@ async fn test_different_user_data_dirs_have_independent_bookmarks() {
         };
 
         let mut shell = BrowserShell::new();
-        shell.initialize(config).await.expect("Profile 2 init failed");
+        shell
+            .initialize(config)
+            .await
+            .expect("Profile 2 init failed");
         shell.shutdown().await.expect("Profile 2 shutdown failed");
 
         assert!(

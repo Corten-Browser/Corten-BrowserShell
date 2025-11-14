@@ -25,7 +25,8 @@ async fn test_complete_message_flow() {
     let result = bus.send("window_manager".to_string(), window_msg).await;
     assert!(result.is_ok());
 
-    let tab_msg = ComponentMessage::CreateTab(WindowId::new(), Some("https://example.com".to_string()));
+    let tab_msg =
+        ComponentMessage::CreateTab(WindowId::new(), Some("https://example.com".to_string()));
     let result = bus.send("tab_manager".to_string(), tab_msg).await;
     assert!(result.is_ok());
 }
@@ -133,7 +134,9 @@ async fn test_error_handling_on_invalid_operations() {
     assert!(result.is_err());
 
     // Try to subscribe non-existent component
-    let result = bus.subscribe("nonexistent".to_string(), "CreateWindow".to_string()).await;
+    let result = bus
+        .subscribe("nonexistent".to_string(), "CreateWindow".to_string())
+        .await;
     assert!(result.is_err());
 
     // Try to register duplicate
@@ -141,6 +144,8 @@ async fn test_error_handling_on_invalid_operations() {
         .await
         .expect("First registration should succeed");
 
-    let result = bus.register("duplicate".to_string(), "type".to_string()).await;
+    let result = bus
+        .register("duplicate".to_string(), "type".to_string())
+        .await;
     assert!(result.is_err());
 }

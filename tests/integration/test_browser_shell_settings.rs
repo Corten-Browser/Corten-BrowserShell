@@ -26,7 +26,10 @@ async fn test_browser_shell_initializes_settings_manager() {
     let result = shell.initialize(config).await;
 
     // Assert
-    assert!(result.is_ok(), "Initialization with settings should succeed");
+    assert!(
+        result.is_ok(),
+        "Initialization with settings should succeed"
+    );
 }
 
 #[tokio::test]
@@ -40,7 +43,10 @@ async fn test_browser_shell_saves_settings_on_shutdown() {
     let user_data_path = PathBuf::from(&config.user_data_dir);
 
     let mut shell = BrowserShell::new();
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
 
     // Act
     let result = shell.shutdown().await;
@@ -118,7 +124,10 @@ async fn test_browser_shell_settings_with_custom_user_data_dir() {
     let mut shell = BrowserShell::new();
 
     // Act
-    shell.initialize(config).await.expect("Initialization failed");
+    shell
+        .initialize(config)
+        .await
+        .expect("Initialization failed");
     shell.shutdown().await.expect("Shutdown failed");
 
     // Assert
