@@ -1,0 +1,19 @@
+name: shell_app
+type: application
+version: 0.1.0
+tech_stack:
+  - rust
+
+dependencies:
+    - browser_shell
+
+estimated_size:
+  lines_of_code: 2000
+  tokens: 20000
+
+quality_requirements:
+  min_test_coverage: 80
+  enforce_tdd: true
+  enforce_bdd: false
+
+description: Application entry point, CLI argument parsing, and browser shell initialization

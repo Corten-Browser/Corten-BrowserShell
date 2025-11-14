@@ -1,0 +1,19 @@
+name: shared_types
+type: base
+version: 0.1.0
+tech_stack:
+  - rust
+
+dependencies:
+    []
+
+estimated_size:
+  lines_of_code: 3000
+  tokens: 30000
+
+quality_requirements:
+  min_test_coverage: 80
+  enforce_tdd: true
+  enforce_bdd: false
+
+description: Common data structures, type definitions, and error types used across all browser shell components
