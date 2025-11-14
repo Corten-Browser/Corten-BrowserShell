@@ -1,6 +1,6 @@
 [package]
 name = "browser_shell"
-version = "0.17.0"
+version = "0.18.0"
 edition = "2021"
 authors = ["Corten Browser Team"]
 description = "Main browser orchestration, component lifecycle coordination, and public API exposure"
@@ -14,6 +14,9 @@ window_manager = { path = "../window_manager" }
 tab_manager = { path = "../tab_manager" }
 ui_chrome = { path = "../ui_chrome" }
 user_data = { path = "../user_data" }
+bookmarks = { path = "../bookmarks" }
+downloads = { path = "../downloads" }
+history = { path = "../history" }
 
 # Async runtime
 tokio = { version = "1.35", features = ["full"] }
