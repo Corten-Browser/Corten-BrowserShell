@@ -3,7 +3,7 @@
 
 use rusqlite::{Connection, params};
 use std::collections::HashMap;
-use super::{SettingsResult, SettingsError};
+use super::SettingsResult;
 
 /// SQLite storage backend for settings
 pub struct SettingsStorage {

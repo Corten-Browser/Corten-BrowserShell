@@ -1,9 +1,8 @@
 // @validates: Complete user_data integration tests
 //! Comprehensive integration tests for all user_data modules
 
-use user_data::{SettingsManager, BookmarksManager, DownloadsTracker, HistoryManager};
+use user_data::SettingsManager;
 use rusqlite::Connection;
-use shared_types::{Url, DownloadInfo, DownloadStatus, DownloadId};
 use tempfile::NamedTempFile;
 
 #[test]
