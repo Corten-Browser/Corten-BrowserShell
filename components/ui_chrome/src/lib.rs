@@ -328,6 +328,18 @@ impl Default for UiChrome {
     }
 }
 
+/// Implement eframe::App trait to enable egui rendering
+impl eframe::App for UiChrome {
+    /// Update and render the UI chrome
+    ///
+    /// This is called by eframe on each frame to update and render the UI.
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Call the existing render method which handles all the UI logic
+        // Ignore any errors from render() as we can't propagate them from update()
+        let _ = self.render(ctx);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
