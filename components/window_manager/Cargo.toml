@@ -1,0 +1,16 @@
+[package]
+name = "window_manager"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+
+# Internal dependencies
+shared_types = { path = "../shared_types" }
+message_bus = { path = "../message_bus" }
+platform_abstraction = { path = "../platform_abstraction" }
+
+[dev-dependencies]
+tokio-test = "0.4"
