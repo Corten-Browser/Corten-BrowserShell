@@ -7,10 +7,13 @@
 use serde::{Deserialize, Serialize};
 use shared_types::{ComponentError, DownloadId};
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 use tokio::task::JoinHandle;
 use url::Url;
+use futures_util::StreamExt;
+use tokio::io::AsyncWriteExt;
 
 /// Status of a download
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -104,7 +107,8 @@ impl DownloadsManager {
 
         // Determine destination path
         let dest_path = destination.unwrap_or_else(|| {
-            format!("/downloads/{}", filename)
+            let downloads_dir = Self::get_downloads_directory();
+            downloads_dir.join(&filename).to_string_lossy().to_string()
         });
 
         // Create download info
@@ -256,11 +260,203 @@ impl DownloadsManager {
             .to_string()
     }
 
-    /// Mock download task that simulates downloading a file
+    /// Get the default downloads directory
     ///
-    /// This is a simulated download for testing purposes. In a real implementation,
-    /// this would use HTTP client to actually download files.
+    /// Returns the user's downloads directory, or a fallback if not available
+    fn get_downloads_directory() -> PathBuf {
+        dirs::download_dir()
+            .or_else(|| dirs::home_dir().map(|h| h.join("Downloads")))
+            .unwrap_or_else(|| PathBuf::from("/tmp/downloads"))
+    }
+
+    /// Ensure the parent directory of a path exists
+    ///
+    /// Creates all parent directories if they don't exist
+    async fn ensure_parent_dir_exists(path: &Path) -> Result<(), ComponentError> {
+        if let Some(parent) = path.parent() {
+            tokio::fs::create_dir_all(parent)
+                .await
+                .map_err(|e| ComponentError::InvalidState(format!("Failed to create directory: {}", e)))?;
+        }
+        Ok(())
+    }
+
+    /// Download task that fetches a file from a URL and saves it to disk
+    ///
+    /// This implementation uses reqwest to perform actual HTTP downloads.
+    /// It supports pause, resume, and cancel operations via control signals.
+    ///
+    /// Set DOWNLOADS_MOCK_MODE=1 environment variable to use mock downloads for testing.
     async fn download_task(
+        info: Arc<RwLock<DownloadInfo>>,
+        mut control_rx: tokio::sync::mpsc::Receiver<ControlSignal>,
+    ) {
+        // Check if mock mode is enabled (for testing)
+        let mock_mode = std::env::var("DOWNLOADS_MOCK_MODE")
+            .map(|v| v == "1" || v.to_lowercase() == "true")
+            .unwrap_or(false);
+
+        if mock_mode {
+            Self::mock_download_task(info, control_rx).await;
+            return;
+        }
+        // Get URL and destination from info
+        let (url, destination) = {
+            let info_read = info.read().await;
+            (info_read.url.clone(), info_read.destination.clone())
+        };
+
+        // Set status to downloading
+        {
+            let mut info_write = info.write().await;
+            info_write.status = DownloadStatus::Downloading;
+        }
+
+        // Ensure parent directory exists
+        let dest_path = PathBuf::from(&destination);
+        if let Err(e) = Self::ensure_parent_dir_exists(&dest_path).await {
+            let mut info_write = info.write().await;
+            info_write.status = DownloadStatus::Failed(e.to_string());
+            return;
+        }
+
+        // Create HTTP client
+        let client = match reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()
+        {
+            Ok(client) => client,
+            Err(e) => {
+                let mut info_write = info.write().await;
+                info_write.status = DownloadStatus::Failed(format!("Failed to create HTTP client: {}", e));
+                return;
+            }
+        };
+
+        // Make HTTP request
+        let response = match client.get(&url).send().await {
+            Ok(resp) => resp,
+            Err(e) => {
+                let mut info_write = info.write().await;
+                info_write.status = DownloadStatus::Failed(format!("HTTP request failed: {}", e));
+                return;
+            }
+        };
+
+        // Check if request was successful
+        if !response.status().is_success() {
+            let mut info_write = info.write().await;
+            info_write.status = DownloadStatus::Failed(format!("HTTP error: {}", response.status()));
+            return;
+        }
+
+        // Get total size from Content-Length header
+        let total_bytes = response.content_length().unwrap_or(0);
+        {
+            let mut info_write = info.write().await;
+            info_write.total_bytes = total_bytes;
+        }
+
+        // Create file for writing
+        let mut file = match tokio::fs::File::create(&dest_path).await {
+            Ok(f) => f,
+            Err(e) => {
+                let mut info_write = info.write().await;
+                info_write.status = DownloadStatus::Failed(format!("Failed to create file: {}", e));
+                return;
+            }
+        };
+
+        // Stream response body and write to file
+        let mut stream = response.bytes_stream();
+        let mut downloaded = 0u64;
+        let mut paused = false;
+        let check_interval = tokio::time::Duration::from_millis(1);
+
+        loop {
+            // Check for control signals with timeout
+            match tokio::time::timeout(check_interval, control_rx.recv()).await {
+                Ok(Some(ControlSignal::Pause)) => {
+                    paused = true;
+                    let mut info_write = info.write().await;
+                    info_write.status = DownloadStatus::Paused;
+                }
+                Ok(Some(ControlSignal::Resume)) => {
+                    paused = false;
+                    let mut info_write = info.write().await;
+                    info_write.status = DownloadStatus::Downloading;
+                }
+                Ok(Some(ControlSignal::Cancel)) => {
+                    let mut info_write = info.write().await;
+                    info_write.status = DownloadStatus::Cancelled;
+                    // Clean up partial file
+                    let _ = tokio::fs::remove_file(&dest_path).await;
+                    return;
+                }
+                Ok(None) => {
+                    // Channel closed
+                    return;
+                }
+                Err(_) => {
+                    // Timeout - no signal received, continue normally
+                }
+            }
+
+            // If paused, wait and continue checking for signals
+            if paused {
+                tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                continue;
+            }
+
+            // Try to get next chunk from stream
+            match stream.next().await {
+                Some(Ok(chunk)) => {
+                    // Write chunk to file
+                    if let Err(e) = file.write_all(&chunk).await {
+                        let mut info_write = info.write().await;
+                        info_write.status = DownloadStatus::Failed(format!("Failed to write to file: {}", e));
+                        return;
+                    }
+
+                    // Update progress
+                    downloaded += chunk.len() as u64;
+                    {
+                        let mut info_write = info.write().await;
+                        info_write.downloaded_bytes = downloaded;
+                    }
+                }
+                Some(Err(e)) => {
+                    // Network error during streaming
+                    let mut info_write = info.write().await;
+                    info_write.status = DownloadStatus::Failed(format!("Network error: {}", e));
+                    return;
+                }
+                None => {
+                    // Stream ended - download complete
+                    break;
+                }
+            }
+        }
+
+        // Flush file to ensure all data is written
+        if let Err(e) = file.flush().await {
+            let mut info_write = info.write().await;
+            info_write.status = DownloadStatus::Failed(format!("Failed to flush file: {}", e));
+            return;
+        }
+
+        // Mark as complete
+        {
+            let mut info_write = info.write().await;
+            info_write.status = DownloadStatus::Complete;
+        }
+    }
+
+    /// Mock download task for testing
+    ///
+    /// This simulates a download without actually fetching from the network.
+    /// Used when DOWNLOADS_MOCK_MODE environment variable is set.
+    async fn mock_download_task(
         info: Arc<RwLock<DownloadInfo>>,
         mut control_rx: tokio::sync::mpsc::Receiver<ControlSignal>,
     ) {
