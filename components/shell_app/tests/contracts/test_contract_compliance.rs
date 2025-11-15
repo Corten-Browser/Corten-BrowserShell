@@ -97,7 +97,8 @@ mod contract_tests {
     #[tokio::test]
     async fn test_main_is_async() {
         // Contract specifies main is async
-        let args = vec!["test".to_string()];
+        // Use headless mode to avoid launching GUI in tests
+        let args = vec!["test".to_string(), "--headless".to_string()];
         let result = ShellApp::main(args).await;
 
         // Should return Result<(), ComponentError>

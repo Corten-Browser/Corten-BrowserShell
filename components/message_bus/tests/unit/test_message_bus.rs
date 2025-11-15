@@ -12,7 +12,9 @@ async fn test_message_bus_creation() {
 #[tokio::test]
 async fn test_register_component() {
     let mut bus = MessageBus::new().expect("Failed to create message bus");
-    let result = bus.register("window_manager".to_string(), "manager".to_string()).await;
+    let result = bus
+        .register("window_manager".to_string(), "manager".to_string())
+        .await;
     assert!(result.is_ok());
 }
 
@@ -21,11 +23,15 @@ async fn test_register_duplicate_component() {
     let mut bus = MessageBus::new().expect("Failed to create message bus");
 
     // Register once - should succeed
-    let result1 = bus.register("window_manager".to_string(), "manager".to_string()).await;
+    let result1 = bus
+        .register("window_manager".to_string(), "manager".to_string())
+        .await;
     assert!(result1.is_ok());
 
     // Register same component again - should fail
-    let result2 = bus.register("window_manager".to_string(), "manager".to_string()).await;
+    let result2 = bus
+        .register("window_manager".to_string(), "manager".to_string())
+        .await;
     assert!(result2.is_err());
 }
 

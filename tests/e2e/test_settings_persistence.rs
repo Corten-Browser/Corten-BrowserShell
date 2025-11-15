@@ -174,7 +174,10 @@ async fn test_different_user_data_dirs_have_independent_settings() {
         };
 
         let mut shell = BrowserShell::new();
-        shell.initialize(config).await.expect("Profile 1 init failed");
+        shell
+            .initialize(config)
+            .await
+            .expect("Profile 1 init failed");
         shell.shutdown().await.expect("Profile 1 shutdown failed");
 
         assert!(profile1_dir.exists(), "Profile 1 directory should exist");
@@ -191,7 +194,10 @@ async fn test_different_user_data_dirs_have_independent_settings() {
         };
 
         let mut shell = BrowserShell::new();
-        shell.initialize(config).await.expect("Profile 2 init failed");
+        shell
+            .initialize(config)
+            .await
+            .expect("Profile 2 init failed");
         shell.shutdown().await.expect("Profile 2 shutdown failed");
 
         assert!(profile2_dir.exists(), "Profile 2 directory should exist");

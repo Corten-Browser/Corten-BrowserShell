@@ -39,7 +39,8 @@ fn test_keyboard_shortcut_serialization() {
     let json = serde_json::to_string(&shortcut).expect("Failed to serialize");
 
     // Deserialize back
-    let deserialized: KeyboardShortcut = serde_json::from_str(&json).expect("Failed to deserialize");
+    let deserialized: KeyboardShortcut =
+        serde_json::from_str(&json).expect("Failed to deserialize");
 
     assert_eq!(shortcut, deserialized);
 }

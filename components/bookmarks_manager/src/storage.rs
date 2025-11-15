@@ -1,9 +1,10 @@
 //! Bookmark storage implementation with YAML persistence
 
 use crate::Bookmark;
+use chrono::Utc;
 use shared_types::{BookmarkId, ComponentError};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
@@ -224,6 +225,175 @@ impl BookmarksManager {
         })?;
 
         Ok(())
+    }
+
+    /// Export all bookmarks to JSON format
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Path where the JSON export file will be created
+    ///
+    /// # Returns
+    ///
+    /// Result indicating success or error
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use bookmarks_manager::BookmarksManager;
+    /// # use std::path::PathBuf;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let manager = BookmarksManager::new(PathBuf::from("/tmp"));
+    /// manager.export_to_json(&PathBuf::from("bookmarks.json")).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn export_to_json(&self, path: impl AsRef<Path>) -> Result<(), ComponentError> {
+        use serde_json::json;
+
+        let bookmarks_vec: Vec<Bookmark> = self.bookmarks.values().cloned().collect();
+
+        let export_data = json!({
+            "version": "1.0",
+            "exported_at": Utc::now().to_rfc3339(),
+            "bookmark_count": bookmarks_vec.len(),
+            "bookmarks": bookmarks_vec
+        });
+
+        let json_string = serde_json::to_string_pretty(&export_data).map_err(|e| {
+            ComponentError::InvalidState(format!("Failed to serialize bookmarks to JSON: {}", e))
+        })?;
+
+        // Ensure parent directory exists
+        if let Some(parent) = path.as_ref().parent() {
+            fs::create_dir_all(parent).await.map_err(|e| {
+                ComponentError::InvalidState(format!("Failed to create export directory: {}", e))
+            })?;
+        }
+
+        fs::write(path.as_ref(), json_string.as_bytes())
+            .await
+            .map_err(|e| {
+                ComponentError::InvalidState(format!("Failed to write JSON export file: {}", e))
+            })?;
+
+        Ok(())
+    }
+
+    /// Import bookmarks from JSON file
+    ///
+    /// Merges imported bookmarks with existing ones, avoiding duplicates by URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Path to the JSON file to import
+    ///
+    /// # Returns
+    ///
+    /// Result containing the count of newly imported bookmarks or error
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use bookmarks_manager::BookmarksManager;
+    /// # use std::path::PathBuf;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut manager = BookmarksManager::new(PathBuf::from("/tmp"));
+    /// let count = manager.import_from_json(&PathBuf::from("bookmarks.json")).await?;
+    /// println!("Imported {} bookmarks", count);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn import_from_json(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> Result<usize, ComponentError> {
+        let contents = fs::read_to_string(path.as_ref()).await.map_err(|e| {
+            ComponentError::InvalidState(format!("Failed to read JSON import file: {}", e))
+        })?;
+
+        let json_data: serde_json::Value = serde_json::from_str(&contents)
+            .map_err(|e| ComponentError::InvalidState(format!("Failed to parse JSON: {}", e)))?;
+
+        // Validate JSON structure
+        let bookmarks_array = json_data
+            .get("bookmarks")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| {
+                ComponentError::InvalidState(
+                    "Invalid JSON structure: missing 'bookmarks' array".to_string(),
+                )
+            })?;
+
+        // Parse bookmarks
+        let imported_bookmarks: Vec<Bookmark> = serde_json::from_value(serde_json::Value::Array(
+            bookmarks_array.clone(),
+        ))
+        .map_err(|e| {
+            ComponentError::InvalidState(format!("Failed to parse bookmarks from JSON: {}", e))
+        })?;
+
+        // Get existing URLs to avoid duplicates
+        let existing_urls: std::collections::HashSet<String> =
+            self.bookmarks.values().map(|b| b.url.clone()).collect();
+
+        let mut imported_count = 0;
+
+        for mut bookmark in imported_bookmarks {
+            // Skip duplicates by URL
+            if existing_urls.contains(&bookmark.url) {
+                continue;
+            }
+
+            // Assign new ID and add
+            let id = BookmarkId::new();
+            bookmark.id = Some(id);
+            self.bookmarks.insert(id, bookmark);
+            imported_count += 1;
+        }
+
+        // Save after importing
+        self.save().await?;
+
+        Ok(imported_count)
+    }
+
+    /// Create a timestamped backup of all bookmarks
+    ///
+    /// Backs up bookmarks to a JSON file with format: `bookmarks_backup_YYYYMMDD_HHMMSS.json`
+    ///
+    /// # Returns
+    ///
+    /// Result containing the path to the created backup file or error
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use bookmarks_manager::BookmarksManager;
+    /// # use std::path::PathBuf;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let manager = BookmarksManager::new(PathBuf::from("/tmp"));
+    /// let backup_path = manager.backup_bookmarks().await?;
+    /// println!("Backup created at: {:?}", backup_path);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn backup_bookmarks(&self) -> Result<PathBuf, ComponentError> {
+        // Generate timestamped filename
+        let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
+        let backup_filename = format!("bookmarks_backup_{}.json", timestamp);
+
+        // Use the storage directory for backups
+        let backup_path = if let Some(parent) = self.storage_path.parent() {
+            parent.join(&backup_filename)
+        } else {
+            PathBuf::from(&backup_filename)
+        };
+
+        // Export to the backup file
+        self.export_to_json(&backup_path).await?;
+
+        Ok(backup_path)
     }
 }
 

@@ -3,6 +3,10 @@
 //! This component provides the main entry point for the CortenBrowser application,
 //! handling command-line argument parsing and initialization of the browser shell.
 
+mod app;
+
+pub use app::BrowserApp;
+
 use clap::Parser;
 use shared_types::ComponentError;
 use std::fmt;
@@ -157,31 +161,13 @@ impl ShellApp {
         // Parse arguments
         let config = Self::parse_args(args)?;
 
-        // Initialize logging
-        init_logging(&config.log_level);
-
-        tracing::info!("Starting CortenBrowser...");
         tracing::debug!("Configuration: {:?}", config);
 
-        // TODO: Initialize browser shell when browser_shell component is ready
-        // For now, just log the configuration
-        tracing::info!("Browser shell initialization would happen here");
+        // Create BrowserApp instance
+        let app = BrowserApp::new(config).await?;
 
-        if let Some(ref url) = config.initial_url {
-            tracing::info!("Would navigate to: {}", url);
-        }
-
-        if config.fullscreen {
-            tracing::info!("Would start in fullscreen mode");
-        }
-
-        if config.headless {
-            tracing::info!("Running in headless mode");
-        }
-
-        if config.enable_devtools {
-            tracing::info!("Developer tools enabled");
-        }
+        // Launch GUI (or run headless)
+        app.launch()?;
 
         Ok(())
     }
@@ -199,9 +185,10 @@ fn init_logging(level: &LogLevel) {
         LogLevel::Trace => "trace",
     };
 
-    tracing_subscriber::fmt()
+    // Use try_init to avoid panic when called multiple times (e.g. in tests)
+    let _ = tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::new(filter_level))
-        .init();
+        .try_init();
 }
 
 /// Run the application

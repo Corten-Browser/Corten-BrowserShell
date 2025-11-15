@@ -4,8 +4,8 @@
 //!
 //! This component provides the browser chrome using egui for rendering the UI.
 
-use shared_types::{ComponentError, KeyboardShortcut, TabId};
-use std::collections::HashMap;
+use shared_types::{ComponentError, DownloadId, KeyboardShortcut, TabId};
+use std::collections::{HashMap, HashSet};
 
 /// State for a single tab
 #[derive(Debug, Clone)]
@@ -18,6 +18,47 @@ pub struct TabState {
 
     /// Whether the tab is currently loading
     pub loading: bool,
+}
+
+/// Types of context menus
+#[derive(Debug, Clone, PartialEq)]
+pub enum ContextMenuType {
+    /// Context menu for a tab
+    Tab(TabId),
+    /// Context menu for the address bar
+    AddressBar,
+}
+
+/// Download status for UI display
+#[derive(Debug, Clone, PartialEq)]
+pub enum DownloadDisplayStatus {
+    /// Download is in progress
+    Downloading,
+    /// Download is paused
+    Paused,
+    /// Download completed successfully
+    Complete,
+    /// Download failed
+    Failed(String),
+}
+
+/// Download information for UI display
+#[derive(Debug, Clone)]
+pub struct DownloadDisplay {
+    /// Unique identifier
+    pub id: DownloadId,
+    /// Filename
+    pub filename: String,
+    /// Downloaded bytes
+    pub downloaded_bytes: u64,
+    /// Total bytes
+    pub total_bytes: u64,
+    /// Download speed in bytes/sec
+    pub bytes_per_second: u64,
+    /// ETA in seconds
+    pub eta_seconds: u64,
+    /// Status
+    pub status: DownloadDisplayStatus,
 }
 
 impl TabState {
@@ -47,6 +88,9 @@ impl TabState {
 /// - Navigation toolbar (back/forward/reload)
 /// - Tab bar with tab management
 /// - Keyboard shortcuts
+/// - UI panels (settings, history, downloads)
+/// - Context menus
+/// - Status bar
 pub struct UiChrome {
     /// Current text in the address bar
     address_bar_text: String,
@@ -62,6 +106,30 @@ pub struct UiChrome {
 
     /// Whether the address bar has focus
     address_bar_focused: bool,
+
+    /// Whether the settings panel is visible
+    settings_panel_visible: bool,
+
+    /// Whether the history panel is visible
+    history_panel_visible: bool,
+
+    /// Whether the downloads panel is visible
+    downloads_panel_visible: bool,
+
+    /// Active context menu, if any
+    active_context_menu: Option<ContextMenuType>,
+
+    /// URL being hovered over (for status bar display)
+    hover_url: Option<String>,
+
+    /// Number of active downloads
+    download_count: usize,
+
+    /// List of downloads for display
+    downloads: Vec<DownloadDisplay>,
+
+    /// Bookmarked URLs
+    bookmarks: HashSet<String>,
 }
 
 impl UiChrome {
@@ -79,6 +147,14 @@ impl UiChrome {
             tab_order: vec![tab_id],
             active_tab_index: 0,
             address_bar_focused: false,
+            settings_panel_visible: false,
+            history_panel_visible: false,
+            downloads_panel_visible: false,
+            active_context_menu: None,
+            hover_url: None,
+            download_count: 0,
+            downloads: Vec::new(),
+            bookmarks: HashSet::new(),
         }
     }
 
@@ -139,11 +215,13 @@ impl UiChrome {
     /// Set the active tab by ID
     pub fn set_active_tab(&mut self, tab_id: TabId) -> Result<(), ComponentError> {
         // Find the index of this tab
-        let index = self.tab_order.iter()
+        let index = self
+            .tab_order
+            .iter()
             .position(|&id| id == tab_id)
-            .ok_or_else(|| ComponentError::ResourceNotFound(
-                format!("Tab {:?} not found", tab_id)
-            ))?;
+            .ok_or_else(|| {
+                ComponentError::ResourceNotFound(format!("Tab {:?} not found", tab_id))
+            })?;
 
         self.active_tab_index = index;
         Ok(())
@@ -155,10 +233,9 @@ impl UiChrome {
     ///
     /// Returns `ComponentError::ResourceNotFound` if the tab doesn't exist
     pub fn update_tab_title(&mut self, tab_id: TabId, title: String) -> Result<(), ComponentError> {
-        let tab = self.tabs.get_mut(&tab_id)
-            .ok_or_else(|| ComponentError::ResourceNotFound(
-                format!("Tab {:?} not found", tab_id)
-            ))?;
+        let tab = self.tabs.get_mut(&tab_id).ok_or_else(|| {
+            ComponentError::ResourceNotFound(format!("Tab {:?} not found", tab_id))
+        })?;
 
         tab.title = title;
         Ok(())
@@ -169,11 +246,14 @@ impl UiChrome {
     /// # Errors
     ///
     /// Returns `ComponentError::ResourceNotFound` if the tab doesn't exist
-    pub fn update_loading_state(&mut self, tab_id: TabId, loading: bool) -> Result<(), ComponentError> {
-        let tab = self.tabs.get_mut(&tab_id)
-            .ok_or_else(|| ComponentError::ResourceNotFound(
-                format!("Tab {:?} not found", tab_id)
-            ))?;
+    pub fn update_loading_state(
+        &mut self,
+        tab_id: TabId,
+        loading: bool,
+    ) -> Result<(), ComponentError> {
+        let tab = self.tabs.get_mut(&tab_id).ok_or_else(|| {
+            ComponentError::ResourceNotFound(format!("Tab {:?} not found", tab_id))
+        })?;
 
         tab.loading = loading;
         Ok(())
@@ -194,7 +274,10 @@ impl UiChrome {
     /// # Errors
     ///
     /// Returns `ComponentError` if the shortcut cannot be handled
-    pub fn handle_keyboard_shortcut(&mut self, shortcut: KeyboardShortcut) -> Result<(), ComponentError> {
+    pub fn handle_keyboard_shortcut(
+        &mut self,
+        shortcut: KeyboardShortcut,
+    ) -> Result<(), ComponentError> {
         match shortcut {
             KeyboardShortcut::CtrlT => {
                 // New tab
@@ -206,7 +289,7 @@ impl UiChrome {
                 // Close tab - but not if it's the last one
                 if self.tab_count() <= 1 {
                     return Err(ComponentError::InvalidState(
-                        "Cannot close the last tab".to_string()
+                        "Cannot close the last tab".to_string(),
                     ));
                 }
 
@@ -246,26 +329,303 @@ impl UiChrome {
         }
     }
 
+    // Phase 3 Enhancement Methods
+
+    /// Close a specific tab by ID
+    ///
+    /// # Errors
+    ///
+    /// Returns `ComponentError::InvalidState` if attempting to close the last tab
+    /// Returns `ComponentError::ResourceNotFound` if the tab doesn't exist
+    pub fn close_tab(&mut self, tab_id: TabId) -> Result<(), ComponentError> {
+        // Check if this is the last tab
+        if self.tab_count() <= 1 {
+            return Err(ComponentError::InvalidState(
+                "Cannot close the last tab".to_string(),
+            ));
+        }
+
+        // Find the tab in tab_order
+        let position = self
+            .tab_order
+            .iter()
+            .position(|&id| id == tab_id)
+            .ok_or_else(|| {
+                ComponentError::ResourceNotFound(format!("Tab {:?} not found", tab_id))
+            })?;
+
+        // Remove from tabs map
+        self.tabs.remove(&tab_id);
+
+        // Remove from tab order
+        self.tab_order.remove(position);
+
+        // Adjust active index if needed
+        if position <= self.active_tab_index && self.active_tab_index > 0 {
+            self.active_tab_index -= 1;
+        } else if self.active_tab_index >= self.tab_order.len() {
+            self.active_tab_index = self.tab_order.len() - 1;
+        }
+
+        Ok(())
+    }
+
+    /// Switch to the next tab (wraps around)
+    pub fn switch_to_next_tab(&mut self) -> Result<(), ComponentError> {
+        if self.tab_order.is_empty() {
+            return Err(ComponentError::InvalidState(
+                "No tabs available".to_string(),
+            ));
+        }
+
+        self.active_tab_index = (self.active_tab_index + 1) % self.tab_order.len();
+        Ok(())
+    }
+
+    /// Switch to the previous tab (wraps around)
+    pub fn switch_to_previous_tab(&mut self) -> Result<(), ComponentError> {
+        if self.tab_order.is_empty() {
+            return Err(ComponentError::InvalidState(
+                "No tabs available".to_string(),
+            ));
+        }
+
+        if self.active_tab_index == 0 {
+            self.active_tab_index = self.tab_order.len() - 1;
+        } else {
+            self.active_tab_index -= 1;
+        }
+        Ok(())
+    }
+
+    /// Switch to a specific tab by number (1-9)
+    ///
+    /// # Errors
+    ///
+    /// Returns `ComponentError::InvalidState` if the tab number is out of range
+    pub fn switch_to_tab_number(&mut self, tab_number: usize) -> Result<(), ComponentError> {
+        if tab_number == 0 || tab_number > self.tab_order.len() {
+            return Err(ComponentError::InvalidState(format!(
+                "Tab number {} is out of range (have {} tabs)",
+                tab_number,
+                self.tab_order.len()
+            )));
+        }
+
+        self.active_tab_index = tab_number - 1; // Convert to 0-indexed
+        Ok(())
+    }
+
+    /// Check if settings panel is visible
+    pub fn is_settings_panel_visible(&self) -> bool {
+        self.settings_panel_visible
+    }
+
+    /// Check if history panel is visible
+    pub fn is_history_panel_visible(&self) -> bool {
+        self.history_panel_visible
+    }
+
+    /// Check if downloads panel is visible
+    pub fn is_downloads_panel_visible(&self) -> bool {
+        self.downloads_panel_visible
+    }
+
+    /// Toggle settings panel visibility
+    pub fn toggle_settings_panel(&mut self) {
+        self.settings_panel_visible = !self.settings_panel_visible;
+    }
+
+    /// Toggle history panel visibility
+    pub fn toggle_history_panel(&mut self) {
+        self.history_panel_visible = !self.history_panel_visible;
+    }
+
+    /// Toggle downloads panel visibility
+    pub fn toggle_downloads_panel(&mut self) {
+        self.downloads_panel_visible = !self.downloads_panel_visible;
+    }
+
+    /// Check if there is an active context menu
+    pub fn has_active_context_menu(&self) -> bool {
+        self.active_context_menu.is_some()
+    }
+
+    /// Show context menu for a tab
+    pub fn show_tab_context_menu(&mut self, tab_id: TabId) {
+        self.active_context_menu = Some(ContextMenuType::Tab(tab_id));
+    }
+
+    /// Show context menu for address bar
+    pub fn show_address_bar_context_menu(&mut self) {
+        self.active_context_menu = Some(ContextMenuType::AddressBar);
+    }
+
+    /// Close the active context menu
+    pub fn close_context_menu(&mut self) {
+        self.active_context_menu = None;
+    }
+
+    /// Set the hover URL for status bar display
+    pub fn set_hover_url(&mut self, url: Option<String>) {
+        self.hover_url = url;
+    }
+
+    /// Get the current hover URL
+    pub fn get_hover_url(&self) -> Option<String> {
+        self.hover_url.clone()
+    }
+
+    /// Set the download count
+    pub fn set_download_count(&mut self, count: usize) {
+        self.download_count = count;
+    }
+
+    /// Get the current download count
+    pub fn get_download_count(&self) -> usize {
+        self.download_count
+    }
+
+    /// Update the downloads list for display
+    pub fn set_downloads(&mut self, downloads: Vec<DownloadDisplay>) {
+        self.download_count = downloads
+            .iter()
+            .filter(|d| {
+                matches!(
+                    d.status,
+                    DownloadDisplayStatus::Downloading | DownloadDisplayStatus::Paused
+                )
+            })
+            .count();
+        self.downloads = downloads;
+    }
+
+    /// Get the current downloads list
+    pub fn get_downloads(&self) -> &[DownloadDisplay] {
+        &self.downloads
+    }
+
+    /// Clear completed downloads from the list
+    pub fn clear_completed_downloads(&mut self) {
+        self.downloads
+            .retain(|d| !matches!(d.status, DownloadDisplayStatus::Complete));
+        self.download_count = self
+            .downloads
+            .iter()
+            .filter(|d| {
+                matches!(
+                    d.status,
+                    DownloadDisplayStatus::Downloading | DownloadDisplayStatus::Paused
+                )
+            })
+            .count();
+    }
+
+    /// Format file size in human-readable format (B, KB, MB, GB)
+    fn format_size(bytes: u64) -> String {
+        const KB: u64 = 1024;
+        const MB: u64 = KB * 1024;
+        const GB: u64 = MB * 1024;
+
+        if bytes >= GB {
+            format!("{:.1} GB", bytes as f64 / GB as f64)
+        } else if bytes >= MB {
+            format!("{:.1} MB", bytes as f64 / MB as f64)
+        } else if bytes >= KB {
+            format!("{:.1} KB", bytes as f64 / KB as f64)
+        } else {
+            format!("{} B", bytes)
+        }
+    }
+
+    /// Format download speed in human-readable format (KB/s, MB/s)
+    fn format_speed(bytes_per_second: u64) -> String {
+        const KB: u64 = 1024;
+        const MB: u64 = KB * 1024;
+
+        if bytes_per_second >= MB {
+            format!("{:.1} MB/s", bytes_per_second as f64 / MB as f64)
+        } else if bytes_per_second >= KB {
+            format!("{:.1} KB/s", bytes_per_second as f64 / KB as f64)
+        } else if bytes_per_second > 0 {
+            format!("{} B/s", bytes_per_second)
+        } else {
+            String::from("-- KB/s")
+        }
+    }
+
+    /// Format time duration in human-readable format (seconds, minutes, hours)
+    fn format_time(seconds: u64) -> String {
+        const MINUTE: u64 = 60;
+        const HOUR: u64 = MINUTE * 60;
+
+        if seconds >= HOUR {
+            let hours = seconds / HOUR;
+            let minutes = (seconds % HOUR) / MINUTE;
+            if minutes > 0 {
+                format!("{}h {}m", hours, minutes)
+            } else {
+                format!("{}h", hours)
+            }
+        } else if seconds >= MINUTE {
+            let minutes = seconds / MINUTE;
+            let secs = seconds % MINUTE;
+            if secs > 0 {
+                format!("{}m {}s", minutes, secs)
+            } else {
+                format!("{}m", minutes)
+            }
+        } else if seconds > 0 {
+            format!("{}s", seconds)
+        } else {
+            String::from("--")
+        }
+    }
+
+    /// Bookmark the current page
+    ///
+    /// # Errors
+    ///
+    /// Returns `ComponentError::InvalidState` if the address bar is empty
+    pub fn bookmark_current_page(&mut self) -> Result<(), ComponentError> {
+        if self.address_bar_text.is_empty() {
+            return Err(ComponentError::InvalidState(
+                "Cannot bookmark an empty address".to_string(),
+            ));
+        }
+
+        self.bookmarks.insert(self.address_bar_text.clone());
+        Ok(())
+    }
+
+    /// Check if a URL is bookmarked
+    pub fn is_bookmarked(&self, url: &str) -> bool {
+        self.bookmarks.contains(url)
+    }
+
     /// Render the UI chrome using egui
     ///
     /// # Errors
     ///
     /// Returns `ComponentError` if rendering fails
     pub fn render(&mut self, ctx: &egui::Context) -> Result<(), ComponentError> {
+        // Handle keyboard shortcuts
+        self.handle_keyboard_input(ctx);
+
         // Top toolbar with navigation buttons
         egui::TopBottomPanel::top("toolbar").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                if ui.button("<").clicked() {
+                if ui.button("◀").clicked() {
                     // Go back - would send message via message bus
                 }
-                if ui.button(">").clicked() {
+                if ui.button("▶").clicked() {
                     // Go forward - would send message via message bus
                 }
-                if ui.button("R").clicked() {
+                if ui.button("⟳").clicked() {
                     // Reload - would send message via message bus
                 }
 
-                // Address bar
+                // Address bar with context menu support
                 let mut address_text = self.address_bar_text.clone();
                 let response = ui.text_edit_singleline(&mut address_text);
 
@@ -276,15 +636,25 @@ impl UiChrome {
                 // Track focus state
                 self.address_bar_focused = response.has_focus();
 
-                if ui.button("Go").clicked() || (response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
+                // Right-click context menu
+                if response.secondary_clicked() {
+                    self.show_address_bar_context_menu();
+                }
+
+                if ui.button("Go").clicked()
+                    || (response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)))
+                {
                     // Navigate - would send message via message bus
                 }
             });
         });
 
-        // Tab bar
+        // Tab bar with close buttons
         egui::TopBottomPanel::top("tabs").show(ctx, |ui| {
             ui.horizontal(|ui| {
+                let mut tab_to_close: Option<TabId> = None;
+                let mut tab_for_context_menu: Option<TabId> = None;
+
                 // Render tabs in order
                 for (index, &tab_id) in self.tab_order.iter().enumerate() {
                     if let Some(tab) = self.tabs.get(&tab_id) {
@@ -292,15 +662,42 @@ impl UiChrome {
 
                         // Show loading indicator if tab is loading
                         let label = if tab.loading {
-                            format!("[L] {}", tab.title)
+                            format!("⟳ {}", tab.title)
                         } else {
                             tab.title.clone()
                         };
 
-                        if ui.selectable_label(is_active, &label).clicked() {
+                        // Tab with hover effect
+                        let tab_response = ui.selectable_label(is_active, &label);
+
+                        if tab_response.clicked() {
                             self.active_tab_index = index;
                         }
+
+                        // Middle-click to close
+                        if tab_response.middle_clicked() {
+                            tab_to_close = Some(tab_id);
+                        }
+
+                        // Right-click context menu (deferred to avoid borrow issues)
+                        if tab_response.secondary_clicked() {
+                            tab_for_context_menu = Some(tab_id);
+                        }
+
+                        // Close button (X)
+                        if ui.small_button("✕").clicked() {
+                            tab_to_close = Some(tab_id);
+                        }
                     }
+                }
+
+                // Process deferred actions
+                if let Some(tab_id) = tab_to_close {
+                    let _ = self.close_tab(tab_id);
+                }
+
+                if let Some(tab_id) = tab_for_context_menu {
+                    self.show_tab_context_menu(tab_id);
                 }
 
                 // New tab button
@@ -310,21 +707,371 @@ impl UiChrome {
             });
         });
 
+        // Render context menus
+        self.render_context_menu(ctx);
+
+        // Left side panels (Settings, History, Downloads)
+        if self.settings_panel_visible {
+            egui::SidePanel::left("settings_panel")
+                .default_width(250.0)
+                .show(ctx, |ui| {
+                    ui.heading("⚙ Settings");
+                    ui.separator();
+                    ui.label("Theme: Dark");
+                    ui.label("Download location: ~/Downloads");
+                    ui.separator();
+                    if ui.button("Close").clicked() {
+                        self.toggle_settings_panel();
+                    }
+                });
+        }
+
+        if self.history_panel_visible {
+            egui::SidePanel::left("history_panel")
+                .default_width(250.0)
+                .show(ctx, |ui| {
+                    ui.heading("📜 History");
+                    ui.separator();
+                    ui.label("No history yet");
+                    ui.separator();
+                    if ui.button("Clear History").clicked() {
+                        // Clear history - would send message via message bus
+                    }
+                    if ui.button("Close").clicked() {
+                        self.toggle_history_panel();
+                    }
+                });
+        }
+
+        if self.downloads_panel_visible {
+            egui::SidePanel::left("downloads_panel")
+                .default_width(400.0)
+                .show(ctx, |ui| {
+                    ui.heading("⬇ Downloads");
+                    ui.separator();
+
+                    // Check if there are any downloads
+                    if self.downloads.is_empty() {
+                        ui.vertical_centered(|ui| {
+                            ui.add_space(20.0);
+                            ui.label("No downloads");
+                            ui.add_space(20.0);
+                        });
+                    } else {
+                        // Render download list with scroll area
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            // Track which download actions to perform (avoid borrow issues)
+                            let mut pause_id: Option<DownloadId> = None;
+                            let mut resume_id: Option<DownloadId> = None;
+                            let mut cancel_id: Option<DownloadId> = None;
+                            let mut open_id: Option<DownloadId> = None;
+
+                            for download in &self.downloads {
+                                ui.group(|ui| {
+                                    // Filename as header
+                                    ui.strong(&download.filename);
+
+                                    // Progress bar
+                                    let progress = if download.total_bytes > 0 {
+                                        download.downloaded_bytes as f32
+                                            / download.total_bytes as f32
+                                    } else {
+                                        0.0
+                                    };
+
+                                    let progress_bar =
+                                        egui::ProgressBar::new(progress).show_percentage();
+                                    ui.add(progress_bar);
+
+                                    // Size information: "4.5 MB / 10 MB"
+                                    let size_info = if download.total_bytes > 0 {
+                                        format!(
+                                            "{} / {}",
+                                            Self::format_size(download.downloaded_bytes),
+                                            Self::format_size(download.total_bytes)
+                                        )
+                                    } else {
+                                        Self::format_size(download.downloaded_bytes)
+                                    };
+                                    ui.label(size_info);
+
+                                    // Speed and ETA (only for downloading status)
+                                    if matches!(download.status, DownloadDisplayStatus::Downloading)
+                                    {
+                                        ui.horizontal(|ui| {
+                                            // Download speed
+                                            ui.label(format!(
+                                                "Speed: {}",
+                                                Self::format_speed(download.bytes_per_second)
+                                            ));
+
+                                            ui.separator();
+
+                                            // ETA
+                                            if download.eta_seconds > 0 {
+                                                ui.label(format!(
+                                                    "ETA: {}",
+                                                    Self::format_time(download.eta_seconds)
+                                                ));
+                                            }
+                                        });
+                                    }
+
+                                    // Status and action buttons
+                                    ui.horizontal(|ui| {
+                                        // Status indicator
+                                        let status_text = match &download.status {
+                                            DownloadDisplayStatus::Downloading => "⬇ Downloading",
+                                            DownloadDisplayStatus::Paused => "⏸ Paused",
+                                            DownloadDisplayStatus::Complete => "✓ Complete",
+                                            DownloadDisplayStatus::Failed(msg) => {
+                                                &format!("✗ Failed: {}", msg)
+                                            }
+                                        };
+                                        ui.label(status_text);
+
+                                        ui.with_layout(
+                                            egui::Layout::right_to_left(egui::Align::Center),
+                                            |ui| {
+                                                // Action buttons based on status
+                                                match &download.status {
+                                                    DownloadDisplayStatus::Downloading => {
+                                                        if ui.small_button("⏸ Pause").clicked() {
+                                                            pause_id = Some(download.id);
+                                                        }
+                                                        if ui.small_button("✕ Cancel").clicked() {
+                                                            cancel_id = Some(download.id);
+                                                        }
+                                                    }
+                                                    DownloadDisplayStatus::Paused => {
+                                                        if ui.small_button("▶ Resume").clicked() {
+                                                            resume_id = Some(download.id);
+                                                        }
+                                                        if ui.small_button("✕ Cancel").clicked() {
+                                                            cancel_id = Some(download.id);
+                                                        }
+                                                    }
+                                                    DownloadDisplayStatus::Complete => {
+                                                        if ui.small_button("📂 Open").clicked() {
+                                                            open_id = Some(download.id);
+                                                        }
+                                                    }
+                                                    DownloadDisplayStatus::Failed(_) => {
+                                                        // No action buttons for failed downloads
+                                                    }
+                                                }
+                                            },
+                                        );
+                                    });
+                                });
+
+                                ui.add_space(5.0);
+                            }
+
+                            // TODO: Process download actions (pause_id, resume_id, cancel_id, open_id)
+                            // These would be sent via message bus to the downloads_manager
+                            // For now, we just collect them but don't process
+                            let _ = (pause_id, resume_id, cancel_id, open_id);
+                        });
+                    }
+
+                    ui.separator();
+
+                    // Bottom buttons
+                    ui.horizontal(|ui| {
+                        if ui.button("Clear Completed").clicked() {
+                            self.clear_completed_downloads();
+                        }
+
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.button("Close").clicked() {
+                                self.toggle_downloads_panel();
+                            }
+                        });
+                    });
+                });
+        }
+
+        // Bottom status bar
+        egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                // Loading status for active tab
+                if let Some(tab_id) = self.active_tab_id() {
+                    if let Some(loading) = self.is_tab_loading(tab_id) {
+                        if loading {
+                            ui.label("⟳ Loading...");
+                        } else {
+                            ui.label("✓ Ready");
+                        }
+                    }
+                }
+
+                ui.separator();
+
+                // Hover URL display
+                if let Some(url) = &self.hover_url {
+                    ui.label(url);
+                } else {
+                    ui.label("");
+                }
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    // Download count badge
+                    if self.download_count > 0 {
+                        ui.label(format!("⬇ {}", self.download_count));
+                    }
+                });
+            });
+        });
+
         // Central panel (placeholder for web content)
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.heading("Web Content Area");
                 ui.label("(WebView will be embedded here)");
+
+                ui.separator();
+                ui.label("Keyboard Shortcuts:");
+                ui.label("Ctrl+T: New tab");
+                ui.label("Ctrl+W: Close tab");
+                ui.label("Ctrl+Tab: Next tab");
+                ui.label("Ctrl+Shift+Tab: Previous tab");
+                ui.label("Ctrl+1-9: Switch to tab N");
+                ui.label("Ctrl+D: Bookmark page");
+                ui.label("Ctrl+H: History panel");
+                ui.label("Ctrl+J: Downloads panel");
+                ui.label("Ctrl+,: Settings panel");
             });
         });
 
         Ok(())
+    }
+
+    /// Handle keyboard input for shortcuts
+    fn handle_keyboard_input(&mut self, ctx: &egui::Context) {
+        ctx.input(|i| {
+            let ctrl = i.modifiers.ctrl;
+            let shift = i.modifiers.shift;
+
+            // Ctrl+Tab: Next tab
+            if ctrl && !shift && i.key_pressed(egui::Key::Tab) {
+                let _ = self.switch_to_next_tab();
+            }
+
+            // Ctrl+Shift+Tab: Previous tab
+            if ctrl && shift && i.key_pressed(egui::Key::Tab) {
+                let _ = self.switch_to_previous_tab();
+            }
+
+            // Ctrl+1-9: Switch to tab number
+            for (key, num) in [
+                (egui::Key::Num1, 1),
+                (egui::Key::Num2, 2),
+                (egui::Key::Num3, 3),
+                (egui::Key::Num4, 4),
+                (egui::Key::Num5, 5),
+                (egui::Key::Num6, 6),
+                (egui::Key::Num7, 7),
+                (egui::Key::Num8, 8),
+                (egui::Key::Num9, 9),
+            ] {
+                if ctrl && i.key_pressed(key) {
+                    let _ = self.switch_to_tab_number(num);
+                }
+            }
+
+            // Ctrl+D: Bookmark current page
+            if ctrl && i.key_pressed(egui::Key::D) {
+                let _ = self.bookmark_current_page();
+            }
+
+            // Ctrl+H: Toggle history panel
+            if ctrl && i.key_pressed(egui::Key::H) {
+                self.toggle_history_panel();
+            }
+
+            // Ctrl+J: Toggle downloads panel
+            if ctrl && i.key_pressed(egui::Key::J) {
+                self.toggle_downloads_panel();
+            }
+
+            // Ctrl+,: Toggle settings panel
+            if ctrl && i.key_pressed(egui::Key::Comma) {
+                self.toggle_settings_panel();
+            }
+        });
+    }
+
+    /// Render context menus
+    fn render_context_menu(&mut self, ctx: &egui::Context) {
+        if let Some(menu_type) = self.active_context_menu.clone() {
+            match menu_type {
+                ContextMenuType::Tab(tab_id) => {
+                    egui::Area::new(egui::Id::new("tab_context_menu"))
+                        .fixed_pos(ctx.pointer_latest_pos().unwrap_or_default())
+                        .show(ctx, |ui| {
+                            egui::Frame::menu(ui.style()).show(ui, |ui| {
+                                if ui.button("Close Tab").clicked() {
+                                    let _ = self.close_tab(tab_id);
+                                    self.close_context_menu();
+                                }
+                                if ui.button("Close Other Tabs").clicked() {
+                                    // Close all tabs except this one
+                                    self.close_context_menu();
+                                }
+                                if ui.button("Close All Tabs").clicked() {
+                                    // Close all tabs (except last one)
+                                    self.close_context_menu();
+                                }
+                            });
+                        });
+
+                    // Close menu on any click outside
+                    if ctx.input(|i| i.pointer.any_click()) {
+                        self.close_context_menu();
+                    }
+                }
+                ContextMenuType::AddressBar => {
+                    egui::Area::new(egui::Id::new("address_bar_context_menu"))
+                        .fixed_pos(ctx.pointer_latest_pos().unwrap_or_default())
+                        .show(ctx, |ui| {
+                            egui::Frame::menu(ui.style()).show(ui, |ui| {
+                                if ui.button("Copy").clicked() {
+                                    // Copy address bar text to clipboard
+                                    self.close_context_menu();
+                                }
+                                if ui.button("Paste").clicked() {
+                                    // Paste from clipboard to address bar
+                                    self.close_context_menu();
+                                }
+                            });
+                        });
+
+                    // Close menu on any click outside
+                    if ctx.input(|i| i.pointer.any_click()) {
+                        self.close_context_menu();
+                    }
+                }
+            }
+        }
     }
 }
 
 impl Default for UiChrome {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Implement eframe::App trait to enable egui rendering
+impl eframe::App for UiChrome {
+    /// Update and render the UI chrome
+    ///
+    /// This is called by eframe on each frame to update and render the UI.
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Call the existing render method which handles all the UI logic
+        // Ignore any errors from render() as we can't propagate them from update()
+        let _ = self.render(ctx);
     }
 }
 

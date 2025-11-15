@@ -33,8 +33,14 @@ async fn test_complete_browser_startup_flow() {
     );
 
     // Step 3: Verify browser is ready for use (no windows/tabs yet)
-    assert!(shell.active_window().is_none(), "No window until explicitly created");
-    assert!(shell.active_tab().is_none(), "No tab until explicitly created");
+    assert!(
+        shell.active_window().is_none(),
+        "No window until explicitly created"
+    );
+    assert!(
+        shell.active_tab().is_none(),
+        "No tab until explicitly created"
+    );
 
     // Step 4: Create initial window (simulating browser launch)
     let window_id = shell
