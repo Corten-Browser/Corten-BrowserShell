@@ -1,5 +1,4 @@
 use downloads_manager::{DownloadStatus, DownloadsManager};
-use std::path::PathBuf;
 use tokio::fs;
 
 /// Test that downloads directory is created if it doesn't exist

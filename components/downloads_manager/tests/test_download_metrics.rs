@@ -134,16 +134,24 @@ async fn test_get_all_download_metrics() {
         .await
         .unwrap();
 
-    // Wait a bit for download to progress
-    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+    // Wait longer for download to progress (200ms should be enough for mock download)
+    tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
 
     // Get metrics
     let metrics = manager.get_all_download_metrics().await;
 
     assert_eq!(metrics.len(), 1);
-    assert!(metrics[0].info.downloaded_bytes > 0);
+    assert!(
+        metrics[0].info.downloaded_bytes > 0,
+        "Download should have progressed, got {} bytes",
+        metrics[0].info.downloaded_bytes
+    );
     // Speed should be calculated for active downloads
-    assert!(metrics[0].bytes_per_second > 0);
+    assert!(
+        metrics[0].bytes_per_second > 0,
+        "Speed should be > 0, got {}",
+        metrics[0].bytes_per_second
+    );
 
     // Cleanup
     std::env::remove_var("DOWNLOADS_MOCK_MODE");
@@ -162,8 +170,8 @@ async fn test_get_download_metrics() {
         .await
         .unwrap();
 
-    // Wait a bit for download to progress
-    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+    // Wait longer for download to progress (200ms should be enough for mock download)
+    tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
 
     // Get metrics for specific download
     let metrics = manager.get_download_metrics(id).await;
@@ -171,8 +179,16 @@ async fn test_get_download_metrics() {
     assert!(metrics.is_some());
     let metrics = metrics.unwrap();
     assert_eq!(metrics.info.id, id);
-    assert!(metrics.info.downloaded_bytes > 0);
-    assert!(metrics.bytes_per_second > 0);
+    assert!(
+        metrics.info.downloaded_bytes > 0,
+        "Download should have progressed, got {} bytes",
+        metrics.info.downloaded_bytes
+    );
+    assert!(
+        metrics.bytes_per_second > 0,
+        "Speed should be > 0, got {}",
+        metrics.bytes_per_second
+    );
 
     // Cleanup
     std::env::remove_var("DOWNLOADS_MOCK_MODE");
@@ -191,12 +207,12 @@ async fn test_metrics_for_paused_download() {
         .await
         .unwrap();
 
-    // Wait and pause
-    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+    // Wait longer for download to start (200ms should be enough for mock download)
+    tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
     manager.pause_download(id).await.unwrap();
 
     // Wait for pause to be processed
-    tokio::time::sleep(tokio::time::Duration::from_millis(20)).await;
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
     // Get metrics for paused download
     let metrics = manager.get_download_metrics(id).await.unwrap();

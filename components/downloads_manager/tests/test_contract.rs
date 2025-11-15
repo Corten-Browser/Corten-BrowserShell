@@ -165,7 +165,7 @@ async fn test_contract_download_info_contains_all_data() {
     assert!(!info.destination.is_empty());
     assert_eq!(info.filename, "document.pdf");
     assert!(info.total_bytes > 0);
-    assert!(info.downloaded_bytes >= 0);
+    // downloaded_bytes is u64, always >= 0 by type definition
     assert!(matches!(
         info.status,
         DownloadStatus::Pending | DownloadStatus::Downloading
