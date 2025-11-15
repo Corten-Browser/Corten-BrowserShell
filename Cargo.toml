@@ -11,6 +11,7 @@ members = [
     "components/settings_manager",
     "components/downloads_manager",
     "components/bookmarks_manager",
+    "components/content_area",
     "components/browser_shell",
     "components/shell_app",
     "tests",

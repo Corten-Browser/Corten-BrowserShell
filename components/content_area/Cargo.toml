@@ -1,0 +1,31 @@
+[package]
+name = "content_area"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Workspace dependencies
+shared_types = { path = "../shared_types" }
+message_bus = { path = "../message_bus" }
+
+# Core async runtime
+tokio = { workspace = true }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# WebView rendering (requires system dependencies: GTK3, WebKit2GTK)
+# wry = "0.35"  # Commented out - needs system libraries not available in CI
+# tao = "0.25"  # Window handling for wry
+
+# UI integration
+egui = "0.29"
+
+# Logging
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
