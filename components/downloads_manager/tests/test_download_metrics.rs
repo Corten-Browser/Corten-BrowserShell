@@ -207,12 +207,26 @@ async fn test_metrics_for_paused_download() {
         .await
         .unwrap();
 
-    // Wait longer for download to start (200ms should be enough for mock download)
+    // Wait for download to start (200ms should be enough for mock download)
     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
     manager.pause_download(id).await.unwrap();
 
-    // Wait for pause to be processed
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    // Poll for pause status to be processed (more robust than fixed wait)
+    let mut pause_confirmed = false;
+    for _ in 0..50 {
+        // Try up to 500ms
+        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        let metrics = manager.get_download_metrics(id).await.unwrap();
+        if metrics.info.status == DownloadStatus::Paused {
+            pause_confirmed = true;
+            break;
+        }
+    }
+
+    assert!(
+        pause_confirmed,
+        "Download should have transitioned to Paused status"
+    );
 
     // Get metrics for paused download
     let metrics = manager.get_download_metrics(id).await.unwrap();
