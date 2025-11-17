@@ -12,13 +12,17 @@ members = [
     "components/downloads_manager",
     "components/bookmarks_manager",
     "components/content_area",
+    "components/history_manager",
+    "components/find_in_page",
+    "components/security_manager",
+    "components/webview_integration",
     "components/browser_shell",
     "components/shell_app",
     "tests",
 ]
 
 [workspace.package]
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 authors = ["CortenBrowser Team"]
 license = "MIT OR Apache-2.0"

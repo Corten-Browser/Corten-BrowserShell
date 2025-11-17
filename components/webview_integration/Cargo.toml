@@ -1,0 +1,19 @@
+[package]
+name = "webview_integration"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+shared_types = { path = "../shared_types" }
+message_bus = { path = "../message_bus" }
+window_manager = { path = "../window_manager" }
+security_manager = { path = "../security_manager" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+url = "2.5"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3.8"
