@@ -161,10 +161,15 @@ impl DownloadsManager {
         // Create control channel
         let (control_tx, control_rx) = tokio::sync::mpsc::channel(10);
 
+        // Capture mock mode at task creation time to avoid race conditions with env vars
+        let mock_mode = std::env::var("DOWNLOADS_MOCK_MODE")
+            .map(|v| v == "1" || v.to_lowercase() == "true")
+            .unwrap_or(false);
+
         // Spawn download task
         let info_clone = info.clone();
         let task_handle = tokio::spawn(async move {
-            Self::download_task(info_clone, control_rx).await;
+            Self::download_task(info_clone, control_rx, mock_mode).await;
         });
 
         // Store download task
@@ -426,12 +431,8 @@ impl DownloadsManager {
     async fn download_task(
         info: Arc<RwLock<DownloadInfo>>,
         mut control_rx: tokio::sync::mpsc::Receiver<ControlSignal>,
+        mock_mode: bool,
     ) {
-        // Check if mock mode is enabled (for testing)
-        let mock_mode = std::env::var("DOWNLOADS_MOCK_MODE")
-            .map(|v| v == "1" || v.to_lowercase() == "true")
-            .unwrap_or(false);
-
         if mock_mode {
             Self::mock_download_task(info, control_rx).await;
             return;
