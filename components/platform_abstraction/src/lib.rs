@@ -10,6 +10,7 @@
 //! - **System Notifications**: Cross-platform notification support with actions and categories
 //! - **Clipboard**: Cross-platform clipboard support for text, HTML, and images
 //! - **File Associations**: Cross-platform file type and protocol registration
+//! - **Drag and Drop**: Cross-platform drag and drop support for files, text, HTML, images, and URLs
 //!
 //! # Phase 1: Stub Implementation
 //!
@@ -17,6 +18,7 @@
 //! Full native window integration will be implemented in later phases.
 
 pub mod clipboard;
+pub mod drag_drop;
 pub mod file_associations;
 mod handles;
 pub mod notification;
@@ -45,4 +47,11 @@ pub use clipboard::{
 pub use file_associations::{
     associations_supported, AssociationConfig, AssociationError, AssociationResult,
     AssociationService, AssociationStatus, FileAssociation, SystemAssociationService,
+};
+
+// Re-export drag and drop types at top level for convenience
+pub use drag_drop::{
+    drag_drop_supported, DragData, DragDropError, DragDropEvent, DragDropManager, DragDropResult,
+    DragFormat, DragSource, DragState, DropEffect, DropIndicator, DropIndicatorStyle, DropTarget,
+    DropTargetId, FileDropTarget, Point, TextDragSource, UrlDragSource,
 };
