@@ -4038,6 +4038,7 @@ name = "render_engine"
 version = "0.5.0"
 dependencies = [
  "serde",
+ "serde_json",
  "shared_types",
  "thiserror 1.0.69",
  "tokio",

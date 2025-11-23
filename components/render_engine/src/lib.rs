@@ -9,6 +9,7 @@
 //! - **Frame scheduling**: Support for 60fps rendering with animation frame callbacks
 //! - **Dirty region tracking**: Efficient partial repaints through invalidation regions
 //! - **Compositor integration**: Layer-based compositing for smooth scrolling and animations
+//! - **DOM integration stubs**: Placeholder types for future HTML/CSS/DOM engine integration
 //!
 //! # Architecture
 //!
@@ -917,9 +918,290 @@ impl Default for FrameScheduler {
     }
 }
 
+// ==================== DOM Integration Stubs (FEAT-013) ====================
+
+/// DOM node types for future HTML/CSS/DOM engine integration
+///
+/// These stubs provide placeholder types that will be implemented
+/// when integrating with an actual DOM engine (e.g., Servo, WebKit).
+pub mod dom {
+    use serde::{Deserialize, Serialize};
+
+    /// Unique identifier for a DOM node
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    pub struct NodeId(pub u64);
+
+    impl NodeId {
+        /// Create a new node ID
+        pub fn new(id: u64) -> Self {
+            Self(id)
+        }
+    }
+
+    /// Basic DOM node types
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    pub enum NodeType {
+        /// Element node (e.g., <div>, <span>)
+        Element,
+        /// Text node
+        Text,
+        /// Comment node
+        Comment,
+        /// Document node
+        Document,
+        /// Document type declaration
+        DocumentType,
+        /// Document fragment
+        DocumentFragment,
+    }
+
+    /// DOM element data (stub)
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    pub struct ElementData {
+        /// Tag name (e.g., "div", "span")
+        pub tag_name: String,
+        /// Element namespace
+        pub namespace: Option<String>,
+        /// Element attributes
+        pub attributes: Vec<(String, String)>,
+    }
+
+    impl ElementData {
+        /// Create a new element with the given tag name
+        pub fn new(tag_name: impl Into<String>) -> Self {
+            Self {
+                tag_name: tag_name.into(),
+                namespace: None,
+                attributes: Vec::new(),
+            }
+        }
+
+        /// Add an attribute to the element
+        pub fn with_attribute(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
+            self.attributes.push((name.into(), value.into()));
+            self
+        }
+
+        /// Get an attribute value by name
+        pub fn get_attribute(&self, name: &str) -> Option<&str> {
+            self.attributes
+                .iter()
+                .find(|(n, _)| n == name)
+                .map(|(_, v)| v.as_str())
+        }
+    }
+
+    /// DOM node representation (stub)
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    pub struct DomNode {
+        /// Unique node identifier
+        pub id: NodeId,
+        /// Node type
+        pub node_type: NodeType,
+        /// Element data (if this is an element node)
+        pub element_data: Option<ElementData>,
+        /// Text content (if this is a text node)
+        pub text_content: Option<String>,
+        /// Child node IDs
+        pub children: Vec<NodeId>,
+        /// Parent node ID
+        pub parent: Option<NodeId>,
+    }
+
+    impl DomNode {
+        /// Create a new element node
+        pub fn element(id: NodeId, data: ElementData) -> Self {
+            Self {
+                id,
+                node_type: NodeType::Element,
+                element_data: Some(data),
+                text_content: None,
+                children: Vec::new(),
+                parent: None,
+            }
+        }
+
+        /// Create a new text node
+        pub fn text(id: NodeId, content: impl Into<String>) -> Self {
+            Self {
+                id,
+                node_type: NodeType::Text,
+                element_data: None,
+                text_content: Some(content.into()),
+                children: Vec::new(),
+                parent: None,
+            }
+        }
+
+        /// Check if this is an element node
+        pub fn is_element(&self) -> bool {
+            matches!(self.node_type, NodeType::Element)
+        }
+
+        /// Check if this is a text node
+        pub fn is_text(&self) -> bool {
+            matches!(self.node_type, NodeType::Text)
+        }
+
+        /// Get the tag name if this is an element
+        pub fn tag_name(&self) -> Option<&str> {
+            self.element_data.as_ref().map(|d| d.tag_name.as_str())
+        }
+    }
+
+    /// CSS computed style values (stub)
+    #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+    pub struct ComputedStyle {
+        /// Display property
+        pub display: String,
+        /// Position property
+        pub position: String,
+        /// Width (in pixels, or "auto")
+        pub width: String,
+        /// Height (in pixels, or "auto")
+        pub height: String,
+        /// Background color
+        pub background_color: String,
+        /// Text color
+        pub color: String,
+        /// Font family
+        pub font_family: String,
+        /// Font size in pixels
+        pub font_size_px: f32,
+    }
+
+    impl ComputedStyle {
+        /// Create default computed style
+        pub fn new() -> Self {
+            Self {
+                display: "block".to_string(),
+                position: "static".to_string(),
+                width: "auto".to_string(),
+                height: "auto".to_string(),
+                background_color: "transparent".to_string(),
+                color: "black".to_string(),
+                font_family: "sans-serif".to_string(),
+                font_size_px: 16.0,
+            }
+        }
+    }
+
+    /// DOM integration trait for future HTML/CSS engine integration
+    ///
+    /// This trait defines the interface that a DOM engine implementation
+    /// must provide to integrate with the render engine.
+    ///
+    /// # Implementation Notes
+    ///
+    /// This is a stub trait. Actual implementation will depend on the
+    /// chosen DOM engine (Servo, WebKit, etc.).
+    pub trait DomIntegration: Send + Sync {
+        /// Get a node by its ID
+        fn get_node(&self, id: NodeId) -> Option<DomNode>;
+
+        /// Get the document root node
+        fn get_document_root(&self) -> Option<NodeId>;
+
+        /// Get computed style for a node
+        fn get_computed_style(&self, id: NodeId) -> Option<ComputedStyle>;
+
+        /// Query nodes by CSS selector (stub - returns empty vec)
+        fn query_selector(&self, selector: &str) -> Vec<NodeId>;
+
+        /// Query all matching nodes by CSS selector (stub - returns empty vec)
+        fn query_selector_all(&self, selector: &str) -> Vec<NodeId>;
+
+        /// Get element by ID
+        fn get_element_by_id(&self, id: &str) -> Option<NodeId>;
+
+        /// Get elements by class name
+        fn get_elements_by_class_name(&self, class_name: &str) -> Vec<NodeId>;
+
+        /// Get elements by tag name
+        fn get_elements_by_tag_name(&self, tag_name: &str) -> Vec<NodeId>;
+    }
+
+    /// Stub DOM integration implementation for testing
+    ///
+    /// This implementation returns empty/default values for all operations.
+    /// It serves as a placeholder until a real DOM engine is integrated.
+    #[derive(Debug, Default)]
+    pub struct StubDomIntegration {
+        /// Mock document root node
+        root: Option<DomNode>,
+    }
+
+    impl StubDomIntegration {
+        /// Create a new stub DOM integration
+        pub fn new() -> Self {
+            Self { root: None }
+        }
+
+        /// Create a stub integration with a mock document
+        pub fn with_mock_document() -> Self {
+            let root = DomNode::element(
+                NodeId::new(1),
+                ElementData::new("html"),
+            );
+            Self { root: Some(root) }
+        }
+    }
+
+    impl DomIntegration for StubDomIntegration {
+        fn get_node(&self, id: NodeId) -> Option<DomNode> {
+            if let Some(ref root) = self.root {
+                if root.id == id {
+                    return Some(root.clone());
+                }
+            }
+            None
+        }
+
+        fn get_document_root(&self) -> Option<NodeId> {
+            self.root.as_ref().map(|n| n.id)
+        }
+
+        fn get_computed_style(&self, _id: NodeId) -> Option<ComputedStyle> {
+            // Return default computed style for any node
+            Some(ComputedStyle::new())
+        }
+
+        fn query_selector(&self, _selector: &str) -> Vec<NodeId> {
+            // Stub: CSS selector queries not implemented
+            Vec::new()
+        }
+
+        fn query_selector_all(&self, _selector: &str) -> Vec<NodeId> {
+            // Stub: CSS selector queries not implemented
+            Vec::new()
+        }
+
+        fn get_element_by_id(&self, _id: &str) -> Option<NodeId> {
+            // Stub: ID queries not implemented
+            None
+        }
+
+        fn get_elements_by_class_name(&self, _class_name: &str) -> Vec<NodeId> {
+            // Stub: class name queries not implemented
+            Vec::new()
+        }
+
+        fn get_elements_by_tag_name(&self, tag_name: &str) -> Vec<NodeId> {
+            // Return root if it matches the tag name
+            if let Some(ref root) = self.root {
+                if root.tag_name() == Some(tag_name) {
+                    return vec![root.id];
+                }
+            }
+            Vec::new()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dom::DomIntegration;
 
     // ==================== Rect Tests ====================
 
@@ -1452,5 +1734,129 @@ mod tests {
         assert_eq!(ts.len(), 2);
         // Both should have similar timestamps since processed together
         assert!((ts[0] - ts[1]).abs() < 1.0);
+    }
+
+    // ==================== DOM Integration Tests (FEAT-013) ====================
+
+    #[test]
+    fn test_node_id() {
+        let id = dom::NodeId::new(42);
+        assert_eq!(id.0, 42);
+    }
+
+    #[test]
+    fn test_element_data_new() {
+        let elem = dom::ElementData::new("div");
+        assert_eq!(elem.tag_name, "div");
+        assert!(elem.namespace.is_none());
+        assert!(elem.attributes.is_empty());
+    }
+
+    #[test]
+    fn test_element_data_with_attribute() {
+        let elem = dom::ElementData::new("div")
+            .with_attribute("id", "main")
+            .with_attribute("class", "container");
+
+        assert_eq!(elem.get_attribute("id"), Some("main"));
+        assert_eq!(elem.get_attribute("class"), Some("container"));
+        assert_eq!(elem.get_attribute("missing"), None);
+    }
+
+    #[test]
+    fn test_dom_node_element() {
+        let data = dom::ElementData::new("div");
+        let node = dom::DomNode::element(dom::NodeId::new(1), data);
+
+        assert!(node.is_element());
+        assert!(!node.is_text());
+        assert_eq!(node.tag_name(), Some("div"));
+        assert!(node.text_content.is_none());
+    }
+
+    #[test]
+    fn test_dom_node_text() {
+        let node = dom::DomNode::text(dom::NodeId::new(2), "Hello, World!");
+
+        assert!(node.is_text());
+        assert!(!node.is_element());
+        assert_eq!(node.tag_name(), None);
+        assert_eq!(node.text_content, Some("Hello, World!".to_string()));
+    }
+
+    #[test]
+    fn test_computed_style_default() {
+        let style = dom::ComputedStyle::new();
+
+        assert_eq!(style.display, "block");
+        assert_eq!(style.position, "static");
+        assert_eq!(style.width, "auto");
+        assert_eq!(style.font_size_px, 16.0);
+    }
+
+    #[test]
+    fn test_stub_dom_integration_empty() {
+        let stub = dom::StubDomIntegration::new();
+
+        assert!(stub.get_document_root().is_none());
+        assert!(stub.get_node(dom::NodeId::new(1)).is_none());
+        assert!(stub.query_selector("div").is_empty());
+        assert!(stub.query_selector_all("div").is_empty());
+        assert!(stub.get_element_by_id("main").is_none());
+        assert!(stub.get_elements_by_class_name("container").is_empty());
+        assert!(stub.get_elements_by_tag_name("div").is_empty());
+    }
+
+    #[test]
+    fn test_stub_dom_integration_with_mock_document() {
+        let stub = dom::StubDomIntegration::with_mock_document();
+
+        // Should have a document root
+        let root_id = stub.get_document_root();
+        assert!(root_id.is_some());
+
+        // Should be able to get the root node
+        let root_id = root_id.unwrap();
+        let root = stub.get_node(root_id);
+        assert!(root.is_some());
+
+        let root = root.unwrap();
+        assert_eq!(root.tag_name(), Some("html"));
+
+        // Should have computed style for root
+        let style = stub.get_computed_style(root_id);
+        assert!(style.is_some());
+
+        // Should find html element by tag name
+        let html_elements = stub.get_elements_by_tag_name("html");
+        assert_eq!(html_elements.len(), 1);
+        assert_eq!(html_elements[0], root_id);
+
+        // Should not find non-existent elements
+        let div_elements = stub.get_elements_by_tag_name("div");
+        assert!(div_elements.is_empty());
+    }
+
+    #[test]
+    fn test_dom_node_serialization() {
+        let data = dom::ElementData::new("span").with_attribute("class", "highlight");
+        let node = dom::DomNode::element(dom::NodeId::new(42), data);
+
+        let json = serde_json::to_string(&node).unwrap();
+        let deserialized: dom::DomNode = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(node.id, deserialized.id);
+        assert_eq!(node.node_type, deserialized.node_type);
+        assert_eq!(node.element_data, deserialized.element_data);
+    }
+
+    #[test]
+    fn test_computed_style_serialization() {
+        let style = dom::ComputedStyle::new();
+
+        let json = serde_json::to_string(&style).unwrap();
+        let deserialized: dom::ComputedStyle = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(style, deserialized);
     }
 }
