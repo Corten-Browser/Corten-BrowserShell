@@ -1,8 +1,7 @@
 //! MessageBus implementation for async inter-component communication
 
 use crate::priority::{
-    MessageRouter, PrioritizedMessage, PriorityQueue, QueueError, QueueMetrics,
-    SharedPriorityQueue,
+    MessageRouter, PrioritizedMessage, PriorityQueue, QueueMetrics, SharedPriorityQueue,
 };
 use crate::types::{ComponentMessage, ComponentResponse, MessagePriority};
 use shared_types::ComponentError;
@@ -477,7 +476,7 @@ impl Default for MessageBus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use shared_types::{KeyboardShortcut, TabId, WindowConfig, WindowId};
+    use shared_types::{KeyboardShortcut, TabId, WindowId};
 
     #[tokio::test]
     async fn test_message_bus_creation() {
@@ -523,9 +522,9 @@ mod tests {
 
         assert!(result.is_ok());
 
-        // Check queue metrics
+        // Check queue metrics - verify metrics are accessible
         let metrics = bus.queue_metrics().await;
-        assert!(metrics.total_processed >= 0);
+        assert_eq!(metrics.total_depth(), 1); // One message enqueued
     }
 
     #[tokio::test]

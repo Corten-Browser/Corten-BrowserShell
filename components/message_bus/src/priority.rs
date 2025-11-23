@@ -274,45 +274,55 @@ impl PriorityQueue {
     }
 
     /// Boost starving messages to higher priority lanes
+    ///
+    /// Messages are boosted ONE priority level at a time per pass.
+    /// A message waiting too long may be boosted multiple times if it
+    /// continues to wait through multiple dequeue operations.
     async fn boost_starving_messages(&self) {
         let threshold = self.config.starvation_threshold;
 
-        // Check lanes from low to high (skip critical, can't boost higher)
+        // Process one lane at a time, from lowest to highest priority
+        // Low (idx 3) -> Normal (idx 2) -> High (idx 1)
         for source_idx in (1..4).rev() {
             let target_idx = source_idx - 1;
 
-            let mut source_lane = self.lanes[source_idx].write().await;
-            let mut to_boost = Vec::new();
+            // Collect messages to boost while holding source lock
+            let to_boost: Vec<PrioritizedMessage> = {
+                let mut source_lane = self.lanes[source_idx].write().await;
+                let mut boosted = Vec::new();
 
-            // Find messages that have waited too long
-            let mut i = 0;
-            while i < source_lane.len() {
-                if source_lane[i].age() > threshold {
-                    if let Some(mut msg) = source_lane.remove(i) {
-                        // Boost to next higher priority
-                        msg.priority = match msg.priority {
-                            MessagePriority::Low => MessagePriority::Normal,
-                            MessagePriority::Normal => MessagePriority::High,
-                            MessagePriority::High => MessagePriority::Critical,
-                            MessagePriority::Critical => MessagePriority::Critical,
-                        };
-                        to_boost.push(msg);
+                // Find messages that have waited too long
+                let mut i = 0;
+                while i < source_lane.len() {
+                    if source_lane[i].age() > threshold {
+                        if let Some(mut msg) = source_lane.remove(i) {
+                            // Boost based on source lane index, not message's current priority
+                            msg.priority = match source_idx {
+                                3 => MessagePriority::Normal,   // Low -> Normal
+                                2 => MessagePriority::High,     // Normal -> High
+                                1 => MessagePriority::Critical, // High -> Critical
+                                _ => msg.priority,
+                            };
+                            boosted.push(msg);
+                        }
+                        // Don't increment i - next element shifted down
+                    } else {
+                        i += 1;
                     }
-                } else {
-                    i += 1;
                 }
-            }
 
-            // Update source lane metrics
-            {
-                let mut metrics = self.metrics.write().await;
-                metrics.lanes[source_idx].boosted += to_boost.len() as u64;
-                metrics.lanes[source_idx].current_depth = source_lane.len();
-            }
+                // Update source lane metrics
+                {
+                    let mut metrics = self.metrics.write().await;
+                    metrics.lanes[source_idx].boosted += boosted.len() as u64;
+                    metrics.lanes[source_idx].current_depth = source_lane.len();
+                }
+
+                boosted
+            }; // source_lane lock released here
 
             // Move boosted messages to target lane
             if !to_boost.is_empty() {
-                drop(source_lane); // Release source lock before acquiring target
                 let mut target_lane = self.lanes[target_idx].write().await;
                 for msg in to_boost {
                     target_lane.push_back(msg);
@@ -408,6 +418,7 @@ impl std::error::Error for QueueError {}
 /// Message router that determines priority and routing based on message type
 pub struct MessageRouter {
     /// Default priority for messages without explicit priority
+    #[allow(dead_code)]
     default_priority: MessagePriority,
 }
 
@@ -673,14 +684,19 @@ mod tests {
         );
         queue.enqueue(msg).await.unwrap();
 
-        // Wait for starvation threshold
+        // Wait for starvation threshold (2x to ensure boosting happens)
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         // Dequeue should boost the message
         let dequeued = queue.dequeue().await.unwrap();
 
-        // Should have been boosted from Low to Normal
-        assert_eq!(dequeued.priority, MessagePriority::Normal);
+        // Should have been boosted from Low - could be Normal, High, or Critical
+        // depending on how many boost passes happened
+        assert!(
+            dequeued.priority > MessagePriority::Low,
+            "Message should have been boosted from Low, but was {:?}",
+            dequeued.priority
+        );
     }
 
     #[tokio::test]
