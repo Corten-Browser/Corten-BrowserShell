@@ -118,6 +118,7 @@
 mod client;
 mod error;
 mod interceptor;
+mod privacy_interceptor;
 pub mod protocol;
 mod request;
 mod response;
@@ -133,6 +134,7 @@ pub use interceptor::{
     RequestInterceptorChain, ResponseInterceptor, ResponseInterceptorChain, RetryInterceptor,
     UserAgentInterceptor,
 };
+pub use privacy_interceptor::{PrivacyInterceptor, PrivacyInterceptorConfig};
 pub use request::{
     CacheMode, CredentialsMode, HeaderMap, Method, NetworkRequest, RedirectPolicy, ResourceType,
 };
