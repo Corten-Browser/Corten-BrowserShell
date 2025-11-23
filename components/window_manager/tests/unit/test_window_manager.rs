@@ -12,7 +12,7 @@ struct MockPlatformWindow {
 impl PlatformWindow for MockPlatformWindow {
     fn create(_config: &WindowConfig) -> Result<Self, WindowError> {
         Ok(Self {
-            handle: PlatformHandle::Linux(platform_abstraction::LinuxHandle { window: 12345 }),
+            handle: PlatformHandle::LinuxX11(platform_abstraction::LinuxX11Handle { window: 12345, display: 0, screen: 0, visual_id: 0 }),
         })
     }
 

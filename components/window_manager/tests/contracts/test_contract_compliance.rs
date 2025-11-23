@@ -3,14 +3,14 @@
 //! These tests verify that window_manager implements the EXACT API defined
 //! in contracts/window_manager.yaml
 
-use platform_abstraction::LinuxWindow;
+use platform_abstraction::LinuxX11Window;
 use shared_types::{WindowConfig, WindowError, WindowId};
 use window_manager::WindowManager;
 
 #[tokio::test]
 async fn test_window_manager_has_create_window() {
     // From contract: create_window(config: WindowConfig) -> Result<WindowId, WindowError>
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
     let config = WindowConfig::default();
 
     // Verify method exists and returns correct type
@@ -21,7 +21,7 @@ async fn test_window_manager_has_create_window() {
 #[tokio::test]
 async fn test_window_manager_has_close_window() {
     // From contract: close_window(id: WindowId) -> Result<(), WindowError>
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
     let window_id = manager
         .create_window(WindowConfig::default())
         .await
@@ -35,7 +35,7 @@ async fn test_window_manager_has_close_window() {
 #[tokio::test]
 async fn test_window_manager_has_get_windows() {
     // From contract: get_windows() -> Vec<WindowId>
-    let manager = WindowManager::<LinuxWindow>::new();
+    let manager = WindowManager::<LinuxX11Window>::new();
 
     // Verify method exists and returns correct type
     let result: Vec<WindowId> = manager.get_windows();
@@ -45,7 +45,7 @@ async fn test_window_manager_has_get_windows() {
 #[tokio::test]
 async fn test_window_manager_has_get_window_config() {
     // From contract: get_window_config(id: WindowId) -> Option<WindowConfig>
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
     let window_id = manager
         .create_window(WindowConfig::default())
         .await
@@ -59,7 +59,7 @@ async fn test_window_manager_has_get_window_config() {
 #[tokio::test]
 async fn test_window_manager_has_resize_window() {
     // From contract: resize_window(id: WindowId, width: u32, height: u32) -> Result<(), WindowError>
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
     let window_id = manager
         .create_window(WindowConfig::default())
         .await
@@ -73,7 +73,7 @@ async fn test_window_manager_has_resize_window() {
 #[tokio::test]
 async fn test_window_manager_has_focus_window() {
     // From contract: focus_window(id: WindowId) -> Result<(), WindowError>
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
     let window_id = manager
         .create_window(WindowConfig::default())
         .await
@@ -90,7 +90,7 @@ fn test_contract_method_names_exact() {
     // If these compile, the method names are correct
 
     async fn verify_signatures() {
-        let mut manager = WindowManager::<LinuxWindow>::new();
+        let mut manager = WindowManager::<LinuxX11Window>::new();
 
         // create_window (NOT createWindow, NOT create)
         let _: Result<WindowId, WindowError> = manager.create_window(WindowConfig::default()).await;
@@ -124,7 +124,7 @@ fn test_return_types_match_contract() {
     fn assert_type<T>(_: PhantomData<T>) {}
 
     async fn verify_types() {
-        let mut manager = WindowManager::<LinuxWindow>::new();
+        let mut manager = WindowManager::<LinuxX11Window>::new();
         let window_id = WindowId::new();
 
         // create_window returns Result<WindowId, WindowError>

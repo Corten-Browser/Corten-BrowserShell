@@ -41,7 +41,7 @@ pub struct BrowserShell {
     /// Window manager (generic over platform window type)
     #[cfg(target_os = "linux")]
     window_manager:
-        Option<Arc<RwLock<window_manager::WindowManager<platform_abstraction::LinuxWindow>>>>,
+        Option<Arc<RwLock<window_manager::WindowManager<platform_abstraction::LinuxX11Window>>>>,
 
     #[cfg(target_os = "windows")]
     window_manager:
