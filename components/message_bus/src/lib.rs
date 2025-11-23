@@ -9,12 +9,19 @@
 //! - Message type subscription system
 //! - Priority-based message handling
 //! - Multi-threaded architecture with dedicated thread pools
+//! - Message routing with deadline tracking
+//! - Priority inversion prevention
 
 mod bus;
+pub mod priority;
 pub mod threading;
 mod types;
 
 // Re-export public types
 pub use bus::MessageBus;
-pub use threading::{ThreadPool, ThreadPoolConfig, ThreadType, ThreadHandle, TaskResult};
+pub use priority::{
+    LaneStats, MessageRouter, PrioritizedMessage, PriorityQueue, PriorityQueueConfig,
+    QueueError, QueueMetrics, RoutingTarget, SharedPriorityQueue,
+};
+pub use threading::{TaskResult, ThreadHandle, ThreadPool, ThreadPoolConfig, ThreadType};
 pub use types::{ComponentMessage, ComponentResponse, MessagePriority};

@@ -363,8 +363,8 @@ impl SessionManager {
             .await
             .map_err(|e| SessionError::IoError(e.to_string()))?;
 
-        let session: SessionState = serde_json::from_str(&json)
-            .map_err(|e| SessionError::Corrupted(e.to_string()))?;
+        let session: SessionState =
+            serde_json::from_str(&json).map_err(|e| SessionError::Corrupted(e.to_string()))?;
 
         Ok(SessionInfo {
             window_count: session.window_count(),
@@ -614,7 +614,10 @@ mod tests {
     #[test]
     fn test_session_config_default() {
         let config = SessionConfig::default();
-        assert_eq!(config.auto_save_interval_secs, DEFAULT_AUTO_SAVE_INTERVAL_SECS);
+        assert_eq!(
+            config.auto_save_interval_secs,
+            DEFAULT_AUTO_SAVE_INTERVAL_SECS
+        );
         assert!(config.auto_save_enabled);
         assert_eq!(config.max_session_history, 5);
     }

@@ -11,6 +11,34 @@
 //! `Unloaded` state and only load content when activated. Inactive tabs
 //! can be suspended to free memory while preserving URL and title.
 //!
+//! ## Process Isolation
+//!
+//! The [`process_isolation`] module provides process-per-tab isolation:
+//!
+//! - **Separate processes**: Each tab runs in its own process
+//! - **Crash isolation**: Tab crash does not affect other tabs
+//! - **IPC communication**: Main process communicates with tab processes via IPC
+//! - **Process recycling**: Processes are recycled after N navigations
+//! - **Sandbox enforcement**: Security sandbox per tab process
+//! - **Resource limits**: Memory and CPU limits per tab process
+//!
+//! ```rust,ignore
+//! use tab_manager::process_isolation::{ProcessIsolationManager, SandboxConfig};
+//!
+//! let manager = ProcessIsolationManager::new();
+//!
+//! // Spawn a process for a new tab
+//! let process_id = manager.spawn_process(tab_id).await?;
+//!
+//! // Send navigation command
+//! manager.send_message(tab_id, TabMessage::Navigate { url }).await?;
+//!
+//! // Check if process should be recycled
+//! if manager.should_recycle(tab_id).await {
+//!     manager.recycle_process(tab_id).await?;
+//! }
+//! ```
+//!
 //! ## Session Management (Crash Recovery)
 //!
 //! The [`session`] module provides crash recovery functionality:
@@ -42,6 +70,7 @@
 //! manager.mark_session_closed().await?;
 //! ```
 
+pub mod process_isolation;
 pub mod session;
 
 use shared_types::{ProcessId, RenderSurfaceId, TabError, TabId, WindowId};
@@ -235,8 +264,8 @@ pub struct LazyLoadConfig {
 impl Default for LazyLoadConfig {
     fn default() -> Self {
         Self {
-            auto_suspend_threshold: 10,  // Suspend when more than 10 tabs loaded
-            immediate_load: false,       // Default to lazy loading
+            auto_suspend_threshold: 10, // Suspend when more than 10 tabs loaded
+            immediate_load: false,      // Default to lazy loading
         }
     }
 }
@@ -404,7 +433,8 @@ impl TabManager {
         );
 
         // Initialize private session data for this tab
-        self.private_sessions.insert(tab_id, PrivateSessionData::new());
+        self.private_sessions
+            .insert(tab_id, PrivateSessionData::new());
 
         Ok(tab_id)
     }
@@ -413,7 +443,8 @@ impl TabManager {
     ///
     /// For private tabs, this also clears all associated private session data.
     pub async fn close_tab(&mut self, tab_id: TabId) -> Result<(), TabError> {
-        let state = self.tabs
+        let state = self
+            .tabs
             .remove(&tab_id)
             .ok_or(TabError::NotFound(tab_id))?;
 
@@ -887,19 +918,21 @@ mod tests {
         let mut manager = TabManager::new();
         let window_id = WindowId::new();
 
-        let tab_id = manager
-            .create_private_tab(window_id, None)
-            .await
-            .unwrap();
+        let tab_id = manager.create_private_tab(window_id, None).await.unwrap();
 
         // Private tab should have session data
         let session = manager.get_private_session_mut(tab_id).unwrap();
-        session.cookies.insert("test_cookie".to_string(), "value".to_string());
+        session
+            .cookies
+            .insert("test_cookie".to_string(), "value".to_string());
         session.cache.insert("test_key".to_string(), vec![1, 2, 3]);
 
         // Verify data was stored
         let session = manager.get_private_session(tab_id).unwrap();
-        assert_eq!(session.cookies.get("test_cookie"), Some(&"value".to_string()));
+        assert_eq!(
+            session.cookies.get("test_cookie"),
+            Some(&"value".to_string())
+        );
         assert_eq!(session.cache.get("test_key"), Some(&vec![1, 2, 3]));
     }
 
@@ -908,10 +941,7 @@ mod tests {
         let mut manager = TabManager::new();
         let window_id = WindowId::new();
 
-        let tab_id = manager
-            .create_tab(window_id, None)
-            .await
-            .unwrap();
+        let tab_id = manager.create_tab(window_id, None).await.unwrap();
 
         // Regular tab should not have private session data
         assert!(manager.get_private_session(tab_id).is_none());
@@ -923,15 +953,14 @@ mod tests {
         let mut manager = TabManager::new();
         let window_id = WindowId::new();
 
-        let tab_id = manager
-            .create_private_tab(window_id, None)
-            .await
-            .unwrap();
+        let tab_id = manager.create_private_tab(window_id, None).await.unwrap();
 
         // Add some data to the private session
         {
             let session = manager.get_private_session_mut(tab_id).unwrap();
-            session.cookies.insert("cookie".to_string(), "data".to_string());
+            session
+                .cookies
+                .insert("cookie".to_string(), "data".to_string());
         }
 
         // Verify private session exists
@@ -956,19 +985,31 @@ mod tests {
 
         {
             let session1 = manager.get_private_session_mut(tab1).unwrap();
-            session1.cookies.insert("cookie1".to_string(), "value1".to_string());
+            session1
+                .cookies
+                .insert("cookie1".to_string(), "value1".to_string());
         }
         {
             let session2 = manager.get_private_session_mut(tab2).unwrap();
-            session2.cookies.insert("cookie2".to_string(), "value2".to_string());
+            session2
+                .cookies
+                .insert("cookie2".to_string(), "value2".to_string());
         }
 
         // Clear all private data
         manager.clear_all_private_data();
 
         // Both sessions should be empty but tabs still exist
-        assert!(manager.get_private_session(tab1).unwrap().cookies.is_empty());
-        assert!(manager.get_private_session(tab2).unwrap().cookies.is_empty());
+        assert!(manager
+            .get_private_session(tab1)
+            .unwrap()
+            .cookies
+            .is_empty());
+        assert!(manager
+            .get_private_session(tab2)
+            .unwrap()
+            .cookies
+            .is_empty());
         assert_eq!(manager.private_tab_count(), 2);
     }
 
@@ -1000,7 +1041,10 @@ mod tests {
             .unwrap();
 
         // Navigate to another URL
-        manager.navigate(tab_id, "https://example.org".to_string()).await.unwrap();
+        manager
+            .navigate(tab_id, "https://example.org".to_string())
+            .await
+            .unwrap();
 
         let info = manager.get_tab_info(tab_id).unwrap();
         assert_eq!(info.url.unwrap().as_str(), "https://example.org/");
@@ -1011,9 +1055,13 @@ mod tests {
     #[test]
     fn test_private_session_data_clear() {
         let mut session = PrivateSessionData::new();
-        session.cookies.insert("key".to_string(), "value".to_string());
+        session
+            .cookies
+            .insert("key".to_string(), "value".to_string());
         session.cache.insert("key".to_string(), vec![1, 2, 3]);
-        session.form_data.insert("field".to_string(), "data".to_string());
+        session
+            .form_data
+            .insert("field".to_string(), "data".to_string());
 
         assert!(!session.cookies.is_empty());
         assert!(!session.cache.is_empty());
@@ -1091,7 +1139,10 @@ mod tests {
         assert_eq!(manager.get_load_state(tab_id), Some(TabLoadState::Loaded));
 
         manager.suspend_tab(tab_id).await.unwrap();
-        assert_eq!(manager.get_load_state(tab_id), Some(TabLoadState::Suspended));
+        assert_eq!(
+            manager.get_load_state(tab_id),
+            Some(TabLoadState::Suspended)
+        );
 
         // URL should still be preserved
         let info = manager.get_tab_info(tab_id).unwrap();
@@ -1111,7 +1162,10 @@ mod tests {
         // Load -> Suspend -> Load again
         manager.load_tab(tab_id).await.unwrap();
         manager.suspend_tab(tab_id).await.unwrap();
-        assert_eq!(manager.get_load_state(tab_id), Some(TabLoadState::Suspended));
+        assert_eq!(
+            manager.get_load_state(tab_id),
+            Some(TabLoadState::Suspended)
+        );
 
         manager.load_tab(tab_id).await.unwrap();
         assert_eq!(manager.get_load_state(tab_id), Some(TabLoadState::Loaded));
@@ -1397,7 +1451,10 @@ mod tests {
 
         // Suspend and verify
         manager.suspend_tab(tab_id).await.unwrap();
-        assert_eq!(manager.get_load_state(tab_id), Some(TabLoadState::Suspended));
+        assert_eq!(
+            manager.get_load_state(tab_id),
+            Some(TabLoadState::Suspended)
+        );
 
         // Should still be private
         assert!(manager.is_private(tab_id));

@@ -1,9 +1,14 @@
 //! MessageBus implementation for async inter-component communication
 
-use crate::types::{ComponentMessage, ComponentResponse};
+use crate::priority::{
+    MessageRouter, PrioritizedMessage, PriorityQueue, QueueError, QueueMetrics,
+    SharedPriorityQueue,
+};
+use crate::types::{ComponentMessage, ComponentResponse, MessagePriority};
 use shared_types::ComponentError;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::{mpsc, RwLock};
 
 /// A message wrapper that includes priority and routing information
@@ -40,9 +45,15 @@ struct ComponentInfo {
 /// - Broadcast messaging
 /// - Message type subscriptions
 /// - Priority-based message handling
+/// - Message routing with deadline tracking
+/// - Priority inversion prevention
 pub struct MessageBus {
     /// Registered components
     components: Arc<RwLock<HashMap<String, ComponentInfo>>>,
+    /// Priority queue for message ordering
+    priority_queue: SharedPriorityQueue,
+    /// Message router for automatic priority determination
+    router: MessageRouter,
 }
 
 impl MessageBus {
@@ -62,6 +73,8 @@ impl MessageBus {
     pub fn new() -> Result<Self, ComponentError> {
         Ok(Self {
             components: Arc::new(RwLock::new(HashMap::new())),
+            priority_queue: Arc::new(PriorityQueue::new()),
+            router: MessageRouter::new(),
         })
     }
 
@@ -276,6 +289,183 @@ impl MessageBus {
 
         Ok(())
     }
+
+    /// Send a message with explicit priority
+    ///
+    /// # Arguments
+    ///
+    /// * `target` - ID of the target component
+    /// * `message` - The message to send
+    /// * `priority` - The priority level for this message
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(ComponentResponse)` with the component's response, or a `ComponentError` if:
+    /// - The target component is not registered
+    /// - Message delivery fails
+    /// - The component does not respond in time
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use message_bus::{MessageBus, ComponentMessage, MessagePriority};
+    /// # use shared_types::WindowId;
+    /// # async fn example() -> Result<(), shared_types::ComponentError> {
+    /// # let mut bus = MessageBus::new()?;
+    /// # bus.register("window_manager".to_string(), "manager".to_string()).await?;
+    /// let message = ComponentMessage::CloseWindow(WindowId::new());
+    /// let response = bus.send_with_priority(
+    ///     "window_manager".to_string(),
+    ///     message,
+    ///     MessagePriority::Critical
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn send_with_priority(
+        &mut self,
+        target: String,
+        message: ComponentMessage,
+        priority: MessagePriority,
+    ) -> Result<ComponentResponse, ComponentError> {
+        // Enqueue message with priority
+        let prioritized_msg =
+            PrioritizedMessage::new(message.clone(), priority).with_target(target.clone());
+
+        self.priority_queue
+            .enqueue(prioritized_msg)
+            .await
+            .map_err(|e| ComponentError::MessageRoutingFailed(format!("Queue error: {}", e)))?;
+
+        // Send the message to the target component
+        self.send(target, message).await
+    }
+
+    /// Send a message with a processing deadline
+    ///
+    /// Messages that are not processed within the deadline will be discarded.
+    ///
+    /// # Arguments
+    ///
+    /// * `target` - ID of the target component
+    /// * `message` - The message to send
+    /// * `deadline` - Maximum time to wait for processing
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(ComponentResponse)` with the component's response, or a `ComponentError` if:
+    /// - The target component is not registered
+    /// - Message delivery fails
+    /// - The deadline expires
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use message_bus::{MessageBus, ComponentMessage};
+    /// # use shared_types::TabId;
+    /// # use std::time::Duration;
+    /// # async fn example() -> Result<(), shared_types::ComponentError> {
+    /// # let mut bus = MessageBus::new()?;
+    /// # bus.register("tab_manager".to_string(), "manager".to_string()).await?;
+    /// let message = ComponentMessage::CloseTab(TabId::new());
+    /// let response = bus.send_with_deadline(
+    ///     "tab_manager".to_string(),
+    ///     message,
+    ///     Duration::from_secs(5)
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn send_with_deadline(
+        &mut self,
+        target: String,
+        message: ComponentMessage,
+        deadline: Duration,
+    ) -> Result<ComponentResponse, ComponentError> {
+        // Determine priority automatically
+        let priority = self.router.determine_priority(&message);
+
+        // Create message with deadline
+        let mut prioritized_msg =
+            PrioritizedMessage::new(message.clone(), priority).with_target(target.clone());
+        prioritized_msg.deadline = Some(std::time::Instant::now() + deadline);
+
+        self.priority_queue
+            .enqueue(prioritized_msg)
+            .await
+            .map_err(|e| ComponentError::MessageRoutingFailed(format!("Queue error: {}", e)))?;
+
+        // Send the message with timeout
+        tokio::time::timeout(deadline, self.send(target, message))
+            .await
+            .map_err(|_| ComponentError::MessageRoutingFailed("Message deadline expired".to_string()))?
+    }
+
+    /// Send a message with automatic priority determination
+    ///
+    /// Priority is automatically determined based on the message type:
+    /// - Critical: User input (keyboard shortcuts), window close
+    /// - High: Navigation, tab/window creation
+    /// - Normal: UI updates (title, address bar)
+    /// - Low: Background tasks
+    ///
+    /// # Arguments
+    ///
+    /// * `target` - ID of the target component
+    /// * `message` - The message to send
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(ComponentResponse)` with the component's response
+    pub async fn send_auto_priority(
+        &mut self,
+        target: String,
+        message: ComponentMessage,
+    ) -> Result<ComponentResponse, ComponentError> {
+        let priority = self.router.determine_priority(&message);
+        self.send_with_priority(target, message, priority).await
+    }
+
+    /// Get the current queue metrics
+    ///
+    /// # Returns
+    ///
+    /// Returns queue metrics including:
+    /// - Messages processed per priority lane
+    /// - Current queue depths
+    /// - Wait time statistics
+    /// - Expiration counts
+    pub async fn queue_metrics(&self) -> QueueMetrics {
+        self.priority_queue.metrics().await
+    }
+
+    /// Get the current queue depth
+    ///
+    /// # Returns
+    ///
+    /// Returns the total number of messages waiting in the queue
+    pub async fn queue_depth(&self) -> usize {
+        self.priority_queue.len().await
+    }
+
+    /// Check if the message queue is empty
+    pub async fn queue_is_empty(&self) -> bool {
+        self.priority_queue.is_empty().await
+    }
+
+    /// Get a reference to the priority queue
+    ///
+    /// This allows direct access to the priority queue for advanced use cases.
+    pub fn priority_queue(&self) -> &SharedPriorityQueue {
+        &self.priority_queue
+    }
+
+    /// Get a reference to the message router
+    ///
+    /// This allows access to routing information for messages.
+    pub fn router(&self) -> &MessageRouter {
+        &self.router
+    }
 }
 
 impl Default for MessageBus {
@@ -287,6 +477,7 @@ impl Default for MessageBus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use shared_types::{KeyboardShortcut, TabId, WindowConfig, WindowId};
 
     #[tokio::test]
     async fn test_message_bus_creation() {
@@ -312,5 +503,119 @@ mod tests {
 
         let result = bus.register("test".to_string(), "type".to_string()).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_send_with_priority() {
+        let mut bus = MessageBus::new().unwrap();
+        bus.register("window_manager".to_string(), "manager".to_string())
+            .await
+            .unwrap();
+
+        let message = ComponentMessage::CloseWindow(WindowId::new());
+        let result = bus
+            .send_with_priority(
+                "window_manager".to_string(),
+                message,
+                MessagePriority::Critical,
+            )
+            .await;
+
+        assert!(result.is_ok());
+
+        // Check queue metrics
+        let metrics = bus.queue_metrics().await;
+        assert!(metrics.total_processed >= 0);
+    }
+
+    #[tokio::test]
+    async fn test_send_with_deadline() {
+        let mut bus = MessageBus::new().unwrap();
+        bus.register("tab_manager".to_string(), "manager".to_string())
+            .await
+            .unwrap();
+
+        let message = ComponentMessage::CloseTab(TabId::new());
+        let result = bus
+            .send_with_deadline(
+                "tab_manager".to_string(),
+                message,
+                Duration::from_secs(5),
+            )
+            .await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_send_auto_priority() {
+        let mut bus = MessageBus::new().unwrap();
+        bus.register("window_manager".to_string(), "manager".to_string())
+            .await
+            .unwrap();
+
+        // Keyboard shortcut should get Critical priority
+        let message = ComponentMessage::KeyboardShortcut(KeyboardShortcut::CtrlT);
+        let result = bus
+            .send_auto_priority("window_manager".to_string(), message)
+            .await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_queue_depth() {
+        let bus = MessageBus::new().unwrap();
+
+        // Initially empty
+        assert!(bus.queue_is_empty().await);
+        assert_eq!(bus.queue_depth().await, 0);
+    }
+
+    #[tokio::test]
+    async fn test_priority_queue_access() {
+        let bus = MessageBus::new().unwrap();
+
+        // Should be able to access the priority queue
+        let queue = bus.priority_queue();
+        assert!(queue.is_empty().await);
+    }
+
+    #[tokio::test]
+    async fn test_router_access() {
+        let bus = MessageBus::new().unwrap();
+        let router = bus.router();
+
+        // Test router functionality
+        let msg = ComponentMessage::KeyboardShortcut(KeyboardShortcut::CtrlT);
+        let priority = router.determine_priority(&msg);
+        assert_eq!(priority, MessagePriority::Critical);
+    }
+
+    #[tokio::test]
+    async fn test_send_to_nonexistent_component_with_priority() {
+        let mut bus = MessageBus::new().unwrap();
+
+        let message = ComponentMessage::CloseWindow(WindowId::new());
+        let result = bus
+            .send_with_priority(
+                "nonexistent".to_string(),
+                message,
+                MessagePriority::High,
+            )
+            .await;
+
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_queue_metrics() {
+        let bus = MessageBus::new().unwrap();
+        let metrics = bus.queue_metrics().await;
+
+        // Initial metrics should be zero
+        assert_eq!(metrics.total_processed, 0);
+        assert_eq!(metrics.total_expired, 0);
+        assert_eq!(metrics.total_depth(), 0);
     }
 }

@@ -20,6 +20,7 @@ members = [
     "components/network_stack",
     "components/browser_shell",
     "components/shell_app",
+    "components/auto_updater",
     "tests",
 ]
 

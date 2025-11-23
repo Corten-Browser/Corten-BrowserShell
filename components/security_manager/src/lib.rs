@@ -6,12 +6,20 @@
 //! - Content Security Policy enforcement
 //! - Permission management
 //! - IPC message validation with rate limiting
+//! - Password management with encrypted storage
 
 mod ipc_validator;
+pub mod password_manager;
 
 pub use ipc_validator::{
     ComponentPermission, IpcMessage, IpcValidationError, IpcValidator,
     MessageValidationConfig, MessageValidator, RateLimitConfig, SuspiciousMessageLog,
+};
+
+pub use password_manager::{
+    BreachCheckResult, Credential, CredentialId, CredentialStore, DecryptedCredential,
+    EncryptedString, PasswordConfig, PasswordError, PasswordGenerator, PasswordStrength,
+    StrengthLevel,
 };
 
 use regex::Regex;
