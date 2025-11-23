@@ -9,7 +9,20 @@
 //! - Extension messaging (content scripts <-> background)
 //! - Permission system for extension capabilities
 //! - Manifest parsing (Chrome extension manifest v3 compatible)
+//! - Chrome-compatible extension APIs (tabs, windows, bookmarks)
+//!
+//! ## Extension APIs (FEAT-090 to FEAT-094)
+//!
+//! The `api` module provides Chrome-compatible extension APIs:
+//!
+//! - [`api::TabsApi`] - chrome.tabs compatible API (FEAT-092)
+//! - [`api::WindowsApi`] - chrome.windows compatible API (FEAT-093)
+//! - [`api::BookmarksApi`] - chrome.bookmarks compatible API (FEAT-094)
+//!
+//! Browser action (FEAT-090) and context menu (FEAT-091) APIs are provided by
+//! the [`BrowserActionApi`] and [`ContextMenuApi`] modules respectively.
 
+pub mod api;
 mod browser_action;
 mod context_menu;
 mod manifest;
