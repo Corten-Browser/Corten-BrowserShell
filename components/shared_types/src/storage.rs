@@ -4,7 +4,7 @@
 //! - Typed key-value storage
 //! - JSON serialization for structured data
 //! - Migration system for schema updates
-//! - Thread-safe concurrent access via connection pooling
+//! - Thread-safe concurrent access
 //! - Platform-specific data directory resolution
 
 use crate::StorageError;
@@ -21,6 +21,8 @@ use directories::ProjectDirs;
 use rusqlite::{params, Connection, OptionalExtension};
 #[cfg(feature = "storage")]
 use std::path::PathBuf;
+#[cfg(feature = "storage")]
+use std::sync::Mutex;
 
 /// Result type for storage operations
 pub type StorageResult<T> = Result<T, StorageError>;
@@ -114,11 +116,11 @@ pub trait Storage: Send + Sync {
 /// SQLite-based storage implementation
 ///
 /// Provides thread-safe storage using SQLite with automatic schema migrations.
-/// Uses Arc<RwLock<Connection>> for concurrent access support.
+/// Uses `std::sync::Mutex` for thread-safe access to the connection.
 #[cfg(feature = "storage")]
 pub struct SqliteStorage {
-    /// Database connection wrapped for thread-safe async access
-    conn: Arc<RwLock<Connection>>,
+    /// Database connection wrapped for thread-safe access
+    conn: Arc<Mutex<Connection>>,
     /// Path to the database file
     db_path: PathBuf,
     /// Namespace for this storage instance (allows multiple stores in one DB)
@@ -154,13 +156,13 @@ impl SqliteStorage {
             Connection::open(&db_path).map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         let storage = Self {
-            conn: Arc::new(RwLock::new(conn)),
+            conn: Arc::new(Mutex::new(conn)),
             db_path,
             namespace: namespace.to_string(),
         };
 
         // Run schema initialization
-        storage.initialize_schema_sync()?;
+        storage.initialize_schema()?;
 
         Ok(storage)
     }
@@ -177,10 +179,9 @@ impl SqliteStorage {
     }
 
     /// Initialize the database schema
-    fn initialize_schema_sync(&self) -> StorageResult<()> {
-        // We need to block here since this is called from new()
-        let conn = self.conn.try_write().map_err(|_| {
-            StorageError::InitializationFailed("Could not acquire write lock".to_string())
+    fn initialize_schema(&self) -> StorageResult<()> {
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::InitializationFailed(format!("Could not acquire lock: {}", e))
         })?;
 
         // Create the migrations table
@@ -227,8 +228,10 @@ impl SqliteStorage {
     }
 
     /// Run migrations to update the schema
-    pub async fn run_migrations(&self, migrations: &[Migration]) -> StorageResult<u32> {
-        let conn = self.conn.write().await;
+    pub fn run_migrations(&self, migrations: &[Migration]) -> StorageResult<u32> {
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let mut applied = 0;
 
         // Get current version
@@ -288,8 +291,10 @@ impl SqliteStorage {
     }
 
     /// Get the current schema version
-    pub async fn schema_version(&self) -> StorageResult<u32> {
-        let conn = self.conn.read().await;
+    pub fn schema_version(&self) -> StorageResult<u32> {
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         conn.query_row(
             "SELECT COALESCE(MAX(version), 0) FROM _migrations",
             [],
@@ -309,8 +314,10 @@ impl SqliteStorage {
     }
 
     /// Execute a raw SQL query (for advanced use cases)
-    pub async fn execute_raw(&self, sql: &str) -> StorageResult<usize> {
-        let conn = self.conn.write().await;
+    pub fn execute_raw(&self, sql: &str) -> StorageResult<usize> {
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         conn.execute(sql, [])
             .map_err(|e| StorageError::DatabaseError(e.to_string()))
     }
@@ -320,7 +327,9 @@ impl SqliteStorage {
 #[async_trait]
 impl Storage for SqliteStorage {
     async fn get<T: DeserializeOwned + Send>(&self, key: &str) -> StorageResult<Option<T>> {
-        let conn = self.conn.read().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let now = Utc::now().to_rfc3339();
 
         let result: Option<String> = conn
@@ -345,7 +354,9 @@ impl Storage for SqliteStorage {
     }
 
     async fn set<T: Serialize + Send + Sync>(&self, key: &str, value: &T) -> StorageResult<()> {
-        let conn = self.conn.write().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let json = serde_json::to_string(value)
             .map_err(|e| StorageError::SerializationError(e.to_string()))?;
 
@@ -373,7 +384,9 @@ impl Storage for SqliteStorage {
         value: &T,
         expires_at: DateTime<Utc>,
     ) -> StorageResult<()> {
-        let conn = self.conn.write().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let json = serde_json::to_string(value)
             .map_err(|e| StorageError::SerializationError(e.to_string()))?;
 
@@ -397,7 +410,9 @@ impl Storage for SqliteStorage {
     }
 
     async fn delete(&self, key: &str) -> StorageResult<bool> {
-        let conn = self.conn.write().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let rows = conn
             .execute(
                 "DELETE FROM kv_store WHERE namespace = ? AND key = ?",
@@ -409,7 +424,9 @@ impl Storage for SqliteStorage {
     }
 
     async fn exists(&self, key: &str) -> StorageResult<bool> {
-        let conn = self.conn.read().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let now = Utc::now().to_rfc3339();
 
         let count: i64 = conn
@@ -426,7 +443,9 @@ impl Storage for SqliteStorage {
     }
 
     async fn list_keys(&self, prefix: &str) -> StorageResult<Vec<String>> {
-        let conn = self.conn.read().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let now = Utc::now().to_rfc3339();
         let pattern = format!("{}%", prefix);
 
@@ -449,7 +468,9 @@ impl Storage for SqliteStorage {
     }
 
     async fn get_metadata(&self, key: &str) -> StorageResult<Option<StorageMetadata>> {
-        let conn = self.conn.read().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
 
         let result: Option<(String, String, Option<String>, String)> = conn
             .query_row(
@@ -486,7 +507,9 @@ impl Storage for SqliteStorage {
     }
 
     async fn clear(&self) -> StorageResult<()> {
-        let conn = self.conn.write().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         conn.execute(
             "DELETE FROM kv_store WHERE namespace = ?",
             params![self.namespace],
@@ -499,7 +522,9 @@ impl Storage for SqliteStorage {
         &self,
         keys: &[&str],
     ) -> StorageResult<HashMap<String, T>> {
-        let conn = self.conn.read().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let now = Utc::now().to_rfc3339();
         let mut result = HashMap::new();
 
@@ -529,7 +554,9 @@ impl Storage for SqliteStorage {
         &self,
         items: &HashMap<String, T>,
     ) -> StorageResult<()> {
-        let conn = self.conn.write().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let now = Utc::now().to_rfc3339();
         let value_type = std::any::type_name::<T>().to_string();
 
@@ -562,7 +589,9 @@ impl Storage for SqliteStorage {
     }
 
     async fn cleanup_expired(&self) -> StorageResult<u64> {
-        let conn = self.conn.write().await;
+        let conn = self.conn.lock().map_err(|e| {
+            StorageError::DatabaseError(format!("Could not acquire lock: {}", e))
+        })?;
         let now = Utc::now().to_rfc3339();
 
         let rows = conn
@@ -713,8 +742,7 @@ impl Storage for InMemoryStorage {
         let mut keys: Vec<String> = data
             .iter()
             .filter(|(k, v)| {
-                k.starts_with(&full_prefix)
-                    && v.expires_at.map(|e| e > now).unwrap_or(true)
+                k.starts_with(&full_prefix) && v.expires_at.map(|e| e > now).unwrap_or(true)
             })
             .map(|(k, _)| k.strip_prefix(&namespace_prefix).unwrap_or(k).to_string())
             .collect();
@@ -800,7 +828,6 @@ impl Storage for InMemoryStorage {
 mod tests {
     use super::*;
     use serde::{Deserialize, Serialize};
-    use std::time::Duration;
 
     #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
     struct TestData {
@@ -954,14 +981,20 @@ mod tests {
         let storage = InMemoryStorage::new("test");
 
         let mut items = HashMap::new();
-        items.insert("key1".to_string(), TestData {
-            name: "one".to_string(),
-            value: 1,
-        });
-        items.insert("key2".to_string(), TestData {
-            name: "two".to_string(),
-            value: 2,
-        });
+        items.insert(
+            "key1".to_string(),
+            TestData {
+                name: "one".to_string(),
+                value: 1,
+            },
+        );
+        items.insert(
+            "key2".to_string(),
+            TestData {
+                name: "two".to_string(),
+                value: 2,
+            },
+        );
 
         storage.set_many(&items).await.unwrap();
 
@@ -1024,7 +1057,10 @@ mod tests {
             // Create storage, write data, and drop it
             {
                 let storage = SqliteStorage::with_path(db_path.clone(), "test").unwrap();
-                storage.set("persistent_key", &"persistent_value").await.unwrap();
+                storage
+                    .set("persistent_key", &"persistent_value")
+                    .await
+                    .unwrap();
             }
 
             // Create new storage instance with same path
@@ -1043,9 +1079,7 @@ mod tests {
                 Migration::new(
                     1,
                     "Create users table",
-                    vec![
-                        "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)".to_string(),
-                    ],
+                    vec!["CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)".to_string()],
                 ),
                 Migration::new(
                     2,
@@ -1054,14 +1088,14 @@ mod tests {
                 ),
             ];
 
-            let applied = storage.run_migrations(&migrations).await.unwrap();
+            let applied = storage.run_migrations(&migrations).unwrap();
             assert_eq!(applied, 2);
 
-            let version = storage.schema_version().await.unwrap();
+            let version = storage.schema_version().unwrap();
             assert_eq!(version, 2);
 
             // Running migrations again should apply 0
-            let applied_again = storage.run_migrations(&migrations).await.unwrap();
+            let applied_again = storage.run_migrations(&migrations).unwrap();
             assert_eq!(applied_again, 0);
         }
 
