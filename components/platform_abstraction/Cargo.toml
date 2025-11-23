@@ -13,6 +13,12 @@ serde = { version = "1.0", features = ["derive"] }
 # Logging
 log = "0.4"
 
+# Cross-platform notifications
+notify-rust = "4"
+
+# Error handling
+thiserror = "1.0"
+
 # Platform-specific dependencies (for future full implementation)
 [target.'cfg(target_os = "linux")'.dependencies]
 # x11rb = { version = "0.13", optional = true }

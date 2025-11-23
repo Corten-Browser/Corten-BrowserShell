@@ -5,6 +5,14 @@
 //! - Input filtering and XSS prevention
 //! - Content Security Policy enforcement
 //! - Permission management
+//! - IPC message validation with rate limiting
+
+mod ipc_validator;
+
+pub use ipc_validator::{
+    ComponentPermission, IpcMessage, IpcValidationError, IpcValidator,
+    MessageValidationConfig, MessageValidator, RateLimitConfig, SuspiciousMessageLog,
+};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};

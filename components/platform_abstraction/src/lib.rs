@@ -4,12 +4,18 @@
 //! It exposes a common `PlatformWindow` trait that all platform implementations must satisfy,
 //! along with platform-specific handle types.
 //!
+//! # Features
+//!
+//! - **Window Management**: Cross-platform window creation, manipulation, and lifecycle management
+//! - **System Notifications**: Cross-platform notification support with actions and categories
+//!
 //! # Phase 1: Stub Implementation
 //!
 //! This is a stub implementation that compiles on all platforms and provides mock functionality.
 //! Full native window integration will be implemented in later phases.
 
 mod handles;
+pub mod notification;
 mod platform;
 mod traits;
 
@@ -17,3 +23,10 @@ mod traits;
 pub use handles::*;
 pub use platform::*;
 pub use traits::*;
+
+// Re-export notification types at top level for convenience
+pub use notification::{
+    Notification, NotificationAction, NotificationBuilder, NotificationCategory, NotificationConfig,
+    NotificationError, NotificationEvent, NotificationId, NotificationPermission, NotificationResult,
+    NotificationService, NotificationUrgency, SystemNotificationService,
+};
