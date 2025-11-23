@@ -3850,6 +3850,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pwa_manager"
+version = "0.5.0"
+dependencies = [
+ "chrono",
+ "directories",
+ "serde",
+ "serde_json",
+ "shared_types",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "pxfm"
 version = "0.1.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5719,9 +5735,12 @@ dependencies = [
  "message_bus",
  "platform_abstraction",
  "serde",
+ "serde_json",
  "shared_types",
+ "thiserror 1.0.69",
  "tokio",
  "tokio-test",
+ "uuid",
 ]
 
 [[package]]

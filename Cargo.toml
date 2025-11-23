@@ -23,6 +23,7 @@ members = [
     "components/auto_updater",
     "components/render_engine",
     "components/sync_manager",
+    "components/pwa_manager",
     "tests",
 ]
 
