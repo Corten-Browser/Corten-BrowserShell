@@ -4050,8 +4050,11 @@ dependencies = [
 name = "tab_manager"
 version = "0.5.0"
 dependencies = [
+ "chrono",
  "serde",
+ "serde_json",
  "shared_types",
+ "tempfile",
  "thiserror 1.0.69",
  "tokio",
  "url",

@@ -71,6 +71,34 @@ pub enum TabError {
     ProcessIsolationFailed(String),
 }
 
+/// Errors that can occur during session operations
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+pub enum SessionError {
+    /// Session save failed
+    #[error("Session save failed: {0}")]
+    SaveFailed(String),
+
+    /// Session restore failed
+    #[error("Session restore failed: {0}")]
+    RestoreFailed(String),
+
+    /// Session file not found
+    #[error("Session file not found: {0}")]
+    NotFound(String),
+
+    /// Session data corrupted
+    #[error("Session data corrupted: {0}")]
+    Corrupted(String),
+
+    /// IO operation failed
+    #[error("Session IO error: {0}")]
+    IoError(String),
+
+    /// Serialization/deserialization failed
+    #[error("Session serialization error: {0}")]
+    SerializationError(String),
+}
+
 /// Errors that can occur during storage operations
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum StorageError {
@@ -184,5 +212,32 @@ mod tests {
         };
         assert!(type_err.to_string().contains("String"));
         assert!(type_err.to_string().contains("Integer"));
+    }
+
+    #[test]
+    fn test_session_error_is_error() {
+        let error = SessionError::SaveFailed("test".to_string());
+        let _: &dyn Error = &error;
+    }
+
+    #[test]
+    fn test_session_error_messages() {
+        let save_err = SessionError::SaveFailed("save failed".to_string());
+        assert!(save_err.to_string().contains("save failed"));
+
+        let restore_err = SessionError::RestoreFailed("restore failed".to_string());
+        assert!(restore_err.to_string().contains("restore failed"));
+
+        let not_found_err = SessionError::NotFound("session.json".to_string());
+        assert!(not_found_err.to_string().contains("session.json"));
+
+        let corrupted_err = SessionError::Corrupted("invalid json".to_string());
+        assert!(corrupted_err.to_string().contains("invalid json"));
+
+        let io_err = SessionError::IoError("permission denied".to_string());
+        assert!(io_err.to_string().contains("permission denied"));
+
+        let ser_err = SessionError::SerializationError("parse error".to_string());
+        assert!(ser_err.to_string().contains("parse error"));
     }
 }
