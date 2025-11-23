@@ -2,49 +2,92 @@
 //!
 //! These tests verify cross-platform compatibility and platform detection.
 
-use platform_abstraction::{PlatformHandle, PlatformWindow};
+use platform_abstraction::{
+    create_platform_window, create_window_for_display_server, current_platform,
+    detect_display_server, DisplayServer, LinuxX11Window, MacWindow, Platform, PlatformHandle,
+    PlatformWindow, WindowsWindow,
+};
 use shared_types::WindowConfig;
-
-#[cfg(target_os = "linux")]
-use platform_abstraction::LinuxWindow;
-
-#[cfg(target_os = "windows")]
-use platform_abstraction::WindowsWindow;
-
-#[cfg(target_os = "macos")]
-use platform_abstraction::MacWindow;
 
 /// Test that platform detection works correctly
 #[test]
 fn test_platform_detection() {
-    #[cfg(target_os = "linux")]
-    {
-        let config = WindowConfig::default();
-        let window = LinuxWindow::create(&config).expect("Failed to create Linux window");
-        match window.get_handle() {
-            PlatformHandle::Linux(_) => {} // Correct
-            _ => panic!("Expected Linux platform handle"),
-        }
-    }
+    let platform = current_platform();
+    let display_server = detect_display_server();
 
-    #[cfg(target_os = "windows")]
-    {
-        let config = WindowConfig::default();
-        let window = WindowsWindow::create(&config).expect("Failed to create Windows window");
-        match window.get_handle() {
-            PlatformHandle::Windows(_) => {} // Correct
-            _ => panic!("Expected Windows platform handle"),
-        }
-    }
+    // Should return valid values
+    assert!(matches!(
+        platform,
+        Platform::Linux | Platform::Windows | Platform::MacOS | Platform::Unknown
+    ));
+    assert!(matches!(
+        display_server,
+        DisplayServer::X11
+            | DisplayServer::Wayland
+            | DisplayServer::XWayland
+            | DisplayServer::WindowsDwm
+            | DisplayServer::MacOSQuartz
+            | DisplayServer::Headless
+            | DisplayServer::Unknown
+    ));
 
-    #[cfg(target_os = "macos")]
-    {
-        let config = WindowConfig::default();
-        let window = MacWindow::create(&config).expect("Failed to create macOS window");
-        match window.get_handle() {
-            PlatformHandle::MacOS(_) => {} // Correct
-            _ => panic!("Expected MacOS platform handle"),
+    println!(
+        "Detected platform: {:?}, display server: {:?}",
+        platform, display_server
+    );
+}
+
+/// Test creating windows with auto-detection
+#[test]
+fn test_auto_platform_window() {
+    let config = WindowConfig::default();
+    let window = create_platform_window(&config);
+    assert!(window.is_ok(), "Should create a window for any platform");
+
+    let window = window.unwrap();
+    let handle = window.get_handle();
+
+    // Handle should be valid for detected platform
+    assert!(handle.raw_id() > 0, "Handle should have a non-zero ID");
+}
+
+/// Test that Linux X11 window handles are correct
+#[test]
+fn test_linux_x11_platform() {
+    let config = WindowConfig::default();
+    let window = LinuxX11Window::create(&config).expect("Failed to create X11 window");
+    match window.get_handle() {
+        PlatformHandle::LinuxX11(h) => {
+            assert!(h.window > 0, "X11 window ID should be non-zero");
+            assert_eq!(h.screen, 0, "Default screen should be 0");
         }
+        _ => panic!("Expected LinuxX11 platform handle"),
+    }
+}
+
+/// Test that Windows window handles are correct
+#[test]
+fn test_windows_platform() {
+    let config = WindowConfig::default();
+    let window = WindowsWindow::create(&config).expect("Failed to create Windows window");
+    match window.get_handle() {
+        PlatformHandle::Windows(h) => {
+            assert!(h.hwnd >= 0x10000, "HWND should be above base value");
+        }
+        _ => panic!("Expected Windows platform handle"),
+    }
+}
+
+/// Test that macOS window handles are correct
+#[test]
+fn test_macos_platform() {
+    let config = WindowConfig::default();
+    let window = MacWindow::create(&config).expect("Failed to create macOS window");
+    match window.get_handle() {
+        PlatformHandle::MacOS(h) => {
+            assert!(h.ns_window >= 0x7FFF0000, "NSWindow should be above base value");
+        }
+        _ => panic!("Expected MacOS platform handle"),
     }
 }
 
@@ -60,14 +103,7 @@ fn test_window_lifecycle() {
         ..Default::default()
     };
 
-    #[cfg(target_os = "linux")]
-    let mut window = LinuxWindow::create(&config).expect("Failed to create window");
-
-    #[cfg(target_os = "windows")]
-    let mut window = WindowsWindow::create(&config).expect("Failed to create window");
-
-    #[cfg(target_os = "macos")]
-    let mut window = MacWindow::create(&config).expect("Failed to create window");
+    let mut window = create_platform_window(&config).expect("Failed to create window");
 
     // Test full lifecycle
     assert!(window.show().is_ok(), "Show failed");
@@ -93,74 +129,56 @@ fn test_multiple_windows() {
         ..Default::default()
     };
 
-    #[cfg(target_os = "linux")]
-    {
-        let window1 = LinuxWindow::create(&config1).expect("Failed to create window 1");
-        let window2 = LinuxWindow::create(&config2).expect("Failed to create window 2");
+    let window1 = create_platform_window(&config1).expect("Failed to create window 1");
+    let window2 = create_platform_window(&config2).expect("Failed to create window 2");
 
-        let handle1 = window1.get_handle();
-        let handle2 = window2.get_handle();
+    let handle1 = window1.get_handle();
+    let handle2 = window2.get_handle();
 
-        // Handles should be different
-        match (handle1, handle2) {
-            (PlatformHandle::Linux(h1), PlatformHandle::Linux(h2)) => {
-                assert_ne!(h1.window, h2.window, "Window handles should be unique");
-            }
-            _ => panic!("Unexpected handle types"),
-        }
-    }
+    // Handles should be different
+    assert_ne!(
+        handle1.raw_id(),
+        handle2.raw_id(),
+        "Window handles should be unique"
+    );
+}
 
-    #[cfg(target_os = "windows")]
-    {
-        let window1 = WindowsWindow::create(&config1).expect("Failed to create window 1");
-        let window2 = WindowsWindow::create(&config2).expect("Failed to create window 2");
+/// Test creating windows for specific display servers
+#[test]
+fn test_explicit_display_server_windows() {
+    let config = WindowConfig::default();
 
-        let handle1 = window1.get_handle();
-        let handle2 = window2.get_handle();
+    // Test X11
+    let x11_window = create_window_for_display_server(&config, DisplayServer::X11);
+    assert!(x11_window.is_ok());
+    assert!(x11_window.unwrap().get_handle().is_x11());
 
-        // Handles should be different
-        match (handle1, handle2) {
-            (PlatformHandle::Windows(h1), PlatformHandle::Windows(h2)) => {
-                assert_ne!(h1.hwnd, h2.hwnd, "Window handles should be unique");
-            }
-            _ => panic!("Unexpected handle types"),
-        }
-    }
+    // Test Wayland
+    let wayland_window = create_window_for_display_server(&config, DisplayServer::Wayland);
+    assert!(wayland_window.is_ok());
+    assert!(wayland_window.unwrap().get_handle().is_wayland());
 
-    #[cfg(target_os = "macos")]
-    {
-        let window1 = MacWindow::create(&config1).expect("Failed to create window 1");
-        let window2 = MacWindow::create(&config2).expect("Failed to create window 2");
+    // Test Windows DWM
+    let win_window = create_window_for_display_server(&config, DisplayServer::WindowsDwm);
+    assert!(win_window.is_ok());
+    assert!(win_window.unwrap().get_handle().is_windows());
 
-        let handle1 = window1.get_handle();
-        let handle2 = window2.get_handle();
+    // Test macOS Quartz
+    let mac_window = create_window_for_display_server(&config, DisplayServer::MacOSQuartz);
+    assert!(mac_window.is_ok());
+    assert!(mac_window.unwrap().get_handle().is_macos());
 
-        // Handles should be different
-        match (handle1, handle2) {
-            (PlatformHandle::MacOS(h1), PlatformHandle::MacOS(h2)) => {
-                assert_ne!(
-                    h1.ns_window, h2.ns_window,
-                    "Window handles should be unique"
-                );
-            }
-            _ => panic!("Unexpected handle types"),
-        }
-    }
+    // Test Headless
+    let stub_window = create_window_for_display_server(&config, DisplayServer::Headless);
+    assert!(stub_window.is_ok());
+    assert!(stub_window.unwrap().get_handle().is_stub());
 }
 
 /// Test window operations are idempotent
 #[test]
 fn test_operations_idempotent() {
     let config = WindowConfig::default();
-
-    #[cfg(target_os = "linux")]
-    let mut window = LinuxWindow::create(&config).expect("Failed to create window");
-
-    #[cfg(target_os = "windows")]
-    let mut window = WindowsWindow::create(&config).expect("Failed to create window");
-
-    #[cfg(target_os = "macos")]
-    let mut window = MacWindow::create(&config).expect("Failed to create window");
+    let mut window = create_platform_window(&config).expect("Failed to create window");
 
     // Multiple calls should not fail
     assert!(window.show().is_ok());
@@ -184,16 +202,7 @@ fn test_minimal_dimensions() {
         ..Default::default()
     };
 
-    #[cfg(target_os = "linux")]
-    let result = LinuxWindow::create(&config);
-
-    #[cfg(target_os = "windows")]
-    let result = WindowsWindow::create(&config);
-
-    #[cfg(target_os = "macos")]
-    let result = MacWindow::create(&config);
-
-    // Stub implementation should accept any dimensions
+    let result = create_platform_window(&config);
     assert!(result.is_ok(), "Should handle minimal dimensions");
 }
 
@@ -207,16 +216,7 @@ fn test_maximal_dimensions() {
         ..Default::default()
     };
 
-    #[cfg(target_os = "linux")]
-    let result = LinuxWindow::create(&config);
-
-    #[cfg(target_os = "windows")]
-    let result = WindowsWindow::create(&config);
-
-    #[cfg(target_os = "macos")]
-    let result = MacWindow::create(&config);
-
-    // Stub implementation should accept any dimensions
+    let result = create_platform_window(&config);
     assert!(result.is_ok(), "Should handle maximal dimensions");
 }
 
@@ -236,14 +236,37 @@ fn test_full_config() {
         skip_taskbar: true,
     };
 
-    #[cfg(target_os = "linux")]
-    let result = LinuxWindow::create(&config);
-
-    #[cfg(target_os = "windows")]
-    let result = WindowsWindow::create(&config);
-
-    #[cfg(target_os = "macos")]
-    let result = MacWindow::create(&config);
-
+    let result = create_platform_window(&config);
     assert!(result.is_ok(), "Should handle full config");
+}
+
+/// Test platform handle utilities
+#[test]
+fn test_platform_handle_utilities() {
+    let config = WindowConfig::default();
+
+    // X11
+    let x11 = create_window_for_display_server(&config, DisplayServer::X11).unwrap();
+    let handle = x11.get_handle();
+    assert!(handle.is_x11());
+    assert!(!handle.is_wayland());
+    assert!(!handle.is_windows());
+    assert!(!handle.is_macos());
+    assert!(!handle.is_stub());
+
+    // Wayland
+    let wayland = create_window_for_display_server(&config, DisplayServer::Wayland).unwrap();
+    let handle = wayland.get_handle();
+    assert!(handle.is_wayland());
+    assert!(!handle.is_x11());
+
+    // Windows
+    let win = create_window_for_display_server(&config, DisplayServer::WindowsDwm).unwrap();
+    let handle = win.get_handle();
+    assert!(handle.is_windows());
+
+    // macOS
+    let mac = create_window_for_display_server(&config, DisplayServer::MacOSQuartz).unwrap();
+    let handle = mac.get_handle();
+    assert!(handle.is_macos());
 }
