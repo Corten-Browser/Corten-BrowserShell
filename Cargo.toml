@@ -16,6 +16,8 @@ members = [
     "components/find_in_page",
     "components/security_manager",
     "components/webview_integration",
+    "components/extensions",
+    "components/network_stack",
     "components/browser_shell",
     "components/shell_app",
     "tests",
