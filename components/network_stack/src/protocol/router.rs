@@ -1,7 +1,7 @@
 //! Protocol router for routing URLs to appropriate handlers.
 
 use std::collections::HashMap;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use url::Url;
 
 use super::response::ProtocolResponse;
@@ -21,8 +21,8 @@ use super::types::{ProtocolError, ProtocolHandler, ProtocolResult};
 /// let mut router = ProtocolRouter::new();
 ///
 /// // Register handlers
-/// router.register(Box::new(FileProtocolHandler::new()));
-/// router.register(Box::new(HttpProtocolHandler::new(client)));
+/// router.register(Arc::new(FileProtocolHandler::new()));
+/// router.register(Arc::new(HttpProtocolHandler::new(client)));
 ///
 /// // Route a URL
 /// let url = Url::parse("file:///home/user/doc.html").unwrap();
@@ -30,7 +30,7 @@ use super::types::{ProtocolError, ProtocolHandler, ProtocolResult};
 /// ```
 pub struct ProtocolRouter {
     /// Map from scheme to handler.
-    handlers: RwLock<HashMap<String, Box<dyn ProtocolHandler>>>,
+    handlers: RwLock<HashMap<String, Arc<dyn ProtocolHandler>>>,
 
     /// Order in which handlers were registered (for iteration).
     registration_order: RwLock<Vec<String>>,
@@ -52,8 +52,8 @@ impl ProtocolRouter {
     ///
     /// # Arguments
     ///
-    /// * `handler` - The handler to register.
-    pub fn register(&self, handler: Box<dyn ProtocolHandler>) {
+    /// * `handler` - The handler to register (wrapped in Arc).
+    pub fn register(&self, handler: Arc<dyn ProtocolHandler>) {
         let schemes = handler.schemes();
         let mut handlers = self.handlers.write().unwrap();
         let mut order = self.registration_order.write().unwrap();
@@ -65,7 +65,7 @@ impl ProtocolRouter {
             order.retain(|s| s != &scheme_lower);
 
             // Add to handlers and order
-            handlers.insert(scheme_lower.clone(), handler.clone_handler());
+            handlers.insert(scheme_lower.clone(), Arc::clone(&handler));
             order.push(scheme_lower);
         }
     }
@@ -100,14 +100,11 @@ impl ProtocolRouter {
     ///
     /// # Returns
     ///
-    /// A reference to the handler, or `None` if no handler is registered.
-    pub fn get_handler(&self, scheme: &str) -> Option<&dyn ProtocolHandler> {
+    /// An Arc to the handler, or `None` if no handler is registered.
+    pub fn get_handler(&self, scheme: &str) -> Option<Arc<dyn ProtocolHandler>> {
         let scheme_lower = scheme.to_lowercase();
         let handlers = self.handlers.read().unwrap();
-        // We can't return a reference to data behind the lock
-        // This is a limitation - we'll need to use the route/handle methods instead
-        drop(handlers);
-        None
+        handlers.get(&scheme_lower).cloned()
     }
 
     /// Route a URL to find the appropriate handler.
@@ -163,14 +160,14 @@ impl ProtocolRouter {
     pub async fn handle(&self, url: &Url) -> ProtocolResult<ProtocolResponse> {
         let scheme = url.scheme().to_lowercase();
 
-        // Get handler reference under read lock, then drop lock before await
-        let handler_result = {
+        // Get handler Arc under read lock, then drop lock before await
+        let handler = {
             let handlers = self.handlers.read().unwrap();
-            handlers.get(&scheme).map(|h| h.clone_handler())
+            handlers.get(&scheme).cloned()
         };
 
-        match handler_result {
-            Some(handler) => handler.handle(url).await,
+        match handler {
+            Some(h) => h.handle(url).await,
             None => Err(ProtocolError::no_handler(url)),
         }
     }
@@ -204,6 +201,12 @@ impl ProtocolRouter {
         handlers.clear();
         order.clear();
     }
+
+    /// Get the number of registered handlers.
+    pub fn handler_count(&self) -> usize {
+        let handlers = self.handlers.read().unwrap();
+        handlers.len()
+    }
 }
 
 impl Default for ProtocolRouter {
@@ -212,24 +215,11 @@ impl Default for ProtocolRouter {
     }
 }
 
-// We need a way to clone handlers for async handling
-// This is a workaround for the async lifetime issue
-trait CloneHandler: ProtocolHandler {
-    fn clone_handler(&self) -> Box<dyn ProtocolHandler>;
-}
-
-impl<T: ProtocolHandler + Clone + 'static> CloneHandler for T {
-    fn clone_handler(&self) -> Box<dyn ProtocolHandler> {
-        Box::new(self.clone())
-    }
-}
-
-// Implement for Box<dyn ProtocolHandler>
-impl dyn ProtocolHandler {
-    fn clone_handler(&self) -> Box<dyn ProtocolHandler> {
-        // This is a placeholder - actual implementation requires Clone
-        // In practice, handlers should implement Clone
-        panic!("Protocol handlers must implement Clone")
+impl std::fmt::Debug for ProtocolRouter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProtocolRouter")
+            .field("schemes", &self.registered_schemes())
+            .finish()
     }
 }
 
@@ -238,7 +228,6 @@ mod tests {
     use super::*;
     use async_trait::async_trait;
 
-    #[derive(Clone)]
     struct MockHandler {
         scheme: String,
         name: String,
@@ -249,6 +238,13 @@ mod tests {
             Self {
                 scheme: scheme.to_string(),
                 name: format!("{} handler", scheme),
+            }
+        }
+
+        fn with_name(scheme: &str, name: &str) -> Self {
+            Self {
+                scheme: scheme.to_string(),
+                name: name.to_string(),
             }
         }
     }
@@ -272,7 +268,6 @@ mod tests {
         }
     }
 
-    #[derive(Clone)]
     struct MultiSchemeHandler;
 
     #[async_trait]
@@ -302,45 +297,63 @@ mod tests {
     fn test_router_new() {
         let router = ProtocolRouter::new();
         assert!(router.registered_schemes().is_empty());
+        assert_eq!(router.handler_count(), 0);
     }
 
     #[test]
     fn test_router_register_single_scheme() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MockHandler::new("test")));
+        router.register(Arc::new(MockHandler::new("test")));
 
         assert!(router.has_handler("test"));
         assert!(router.has_handler("TEST")); // Case insensitive
         assert!(!router.has_handler("other"));
         assert_eq!(router.registered_schemes(), vec!["test"]);
+        assert_eq!(router.handler_count(), 1);
     }
 
     #[test]
     fn test_router_register_multi_scheme() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MultiSchemeHandler));
+        router.register(Arc::new(MultiSchemeHandler));
 
         assert!(router.has_handler("http"));
         assert!(router.has_handler("https"));
         assert!(router.has_handler("HTTP")); // Case insensitive
         assert!(router.has_handler("HTTPS")); // Case insensitive
+        // Same handler for both schemes, but counted once per scheme
+        assert_eq!(router.handler_count(), 2);
+    }
+
+    #[test]
+    fn test_router_get_handler() {
+        let router = ProtocolRouter::new();
+        router.register(Arc::new(MockHandler::new("test")));
+
+        let handler = router.get_handler("test");
+        assert!(handler.is_some());
+        assert_eq!(handler.unwrap().scheme(), "test");
+
+        let missing = router.get_handler("other");
+        assert!(missing.is_none());
     }
 
     #[test]
     fn test_router_unregister() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MockHandler::new("test")));
+        router.register(Arc::new(MockHandler::new("test")));
 
         assert!(router.has_handler("test"));
         assert!(router.unregister("test"));
         assert!(!router.has_handler("test"));
         assert!(!router.unregister("test")); // Already removed
+        assert_eq!(router.handler_count(), 0);
     }
 
     #[test]
     fn test_router_route() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MockHandler::new("file")));
+        router.register(Arc::new(MockHandler::new("file")));
 
         let file_url = Url::parse("file:///path/to/file").unwrap();
         let http_url = Url::parse("http://example.com").unwrap();
@@ -352,7 +365,7 @@ mod tests {
     #[test]
     fn test_router_can_handle() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MockHandler::new("file")));
+        router.register(Arc::new(MockHandler::new("file")));
 
         let file_url = Url::parse("file:///path/to/file").unwrap();
         let http_url = Url::parse("http://example.com").unwrap();
@@ -364,8 +377,8 @@ mod tests {
     #[test]
     fn test_router_handler_info() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MockHandler::new("file")));
-        router.register(Box::new(MockHandler::new("custom")));
+        router.register(Arc::new(MockHandler::new("file")));
+        router.register(Arc::new(MockHandler::new("custom")));
 
         let info = router.handler_info();
         assert_eq!(info.len(), 2);
@@ -378,8 +391,8 @@ mod tests {
     #[test]
     fn test_router_clear() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MockHandler::new("file")));
-        router.register(Box::new(MockHandler::new("custom")));
+        router.register(Arc::new(MockHandler::new("file")));
+        router.register(Arc::new(MockHandler::new("custom")));
 
         assert_eq!(router.registered_schemes().len(), 2);
 
@@ -388,36 +401,45 @@ mod tests {
         assert!(router.registered_schemes().is_empty());
         assert!(!router.has_handler("file"));
         assert!(!router.has_handler("custom"));
+        assert_eq!(router.handler_count(), 0);
     }
 
     #[test]
     fn test_router_replace_handler() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MockHandler::new("test")));
+        router.register(Arc::new(MockHandler::new("test")));
 
         let info = router.handler_info();
         assert_eq!(info[0].1, "test handler");
 
         // Register a new handler for the same scheme
-        let mut new_handler = MockHandler::new("test");
-        new_handler.name = "New test handler".to_string();
-        router.register(Box::new(new_handler));
+        router.register(Arc::new(MockHandler::with_name("test", "New test handler")));
 
         let info = router.handler_info();
         assert_eq!(info.len(), 1);
         assert_eq!(info[0].1, "New test handler");
     }
 
+    #[test]
+    fn test_router_debug() {
+        let router = ProtocolRouter::new();
+        router.register(Arc::new(MockHandler::new("test")));
+
+        let debug_str = format!("{:?}", router);
+        assert!(debug_str.contains("ProtocolRouter"));
+        assert!(debug_str.contains("test"));
+    }
+
     #[tokio::test]
     async fn test_router_handle_success() {
         let router = ProtocolRouter::new();
-        router.register(Box::new(MockHandler::new("test")));
+        router.register(Arc::new(MockHandler::new("test")));
 
         let url = Url::parse("test://example").unwrap();
         let response = router.handle(&url).await.unwrap();
 
         assert!(response.is_success());
-        assert_eq!(response.text().unwrap(), "Handled by test");
+        assert_eq!(response.body_text().unwrap(), "Handled by test");
     }
 
     #[tokio::test]
@@ -428,5 +450,20 @@ mod tests {
         let result = router.handle(&url).await;
 
         assert!(matches!(result, Err(ProtocolError::NoHandler { .. })));
+    }
+
+    #[tokio::test]
+    async fn test_router_handle_multi_scheme() {
+        let router = ProtocolRouter::new();
+        router.register(Arc::new(MultiSchemeHandler));
+
+        let http_url = Url::parse("http://example.com").unwrap();
+        let https_url = Url::parse("https://example.com").unwrap();
+
+        let http_response = router.handle(&http_url).await.unwrap();
+        let https_response = router.handle(&https_url).await.unwrap();
+
+        assert!(http_response.is_success());
+        assert!(https_response.is_success());
     }
 }

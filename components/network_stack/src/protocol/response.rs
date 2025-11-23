@@ -215,7 +215,7 @@ impl ProtocolResponse {
     }
 
     /// Get the body as a UTF-8 string.
-    pub fn text(&self) -> Result<String, std::string::FromUtf8Error> {
+    pub fn body_text(&self) -> Result<String, std::string::FromUtf8Error> {
         String::from_utf8(self.body.clone())
     }
 
@@ -281,7 +281,7 @@ mod tests {
         let response = ProtocolResponse::html(test_url(), "<h1>Hello</h1>", "test");
         assert!(response.is_success());
         assert_eq!(response.content_type, mime::HTML);
-        assert_eq!(response.text().unwrap(), "<h1>Hello</h1>");
+        assert_eq!(response.body_text().unwrap(), "<h1>Hello</h1>");
     }
 
     #[test]
@@ -289,7 +289,7 @@ mod tests {
         let response = ProtocolResponse::text(test_url(), "Hello, World!", "test");
         assert!(response.is_success());
         assert_eq!(response.content_type, mime::TEXT);
-        assert_eq!(response.text().unwrap(), "Hello, World!");
+        assert_eq!(response.body_text().unwrap(), "Hello, World!");
     }
 
     #[test]

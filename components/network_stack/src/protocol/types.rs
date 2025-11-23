@@ -247,7 +247,7 @@ mod tests {
     #[test]
     fn test_protocol_error_unsupported_scheme() {
         let error = ProtocolError::unsupported_scheme("ftp");
-        assert!(matches!(error, ProtocolError::UnsupportedScheme { scheme } if scheme == "ftp"));
+        assert!(matches!(&error, ProtocolError::UnsupportedScheme { scheme } if scheme == "ftp"));
         assert!(error.to_string().contains("ftp"));
     }
 

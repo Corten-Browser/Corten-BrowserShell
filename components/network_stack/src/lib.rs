@@ -118,6 +118,7 @@
 mod client;
 mod error;
 mod interceptor;
+pub mod protocol;
 mod request;
 mod response;
 

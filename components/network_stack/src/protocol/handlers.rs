@@ -619,7 +619,7 @@ mod tests {
         let response = handler.handle(&url).await.unwrap();
 
         assert!(response.is_success());
-        assert!(response.text().unwrap().contains("Browser Settings"));
+        assert!(response.body_text().unwrap().contains("Browser Settings"));
     }
 
     #[tokio::test]
