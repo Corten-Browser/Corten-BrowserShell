@@ -8,10 +8,16 @@
 //! - IPC message validation with rate limiting
 //! - Password management with encrypted storage
 //! - Privacy management (DNT, cookie blocking, tracking protection)
+//! - Ad blocking and content filtering
 
+pub mod ad_blocker;
 mod ipc_validator;
 pub mod password_manager;
 pub mod privacy;
+
+pub use ad_blocker::{
+    AdBlocker, BlockStats, CheckResult, ContentType, FilterAction, FilterList, FilterRule,
+};
 
 pub use ipc_validator::{
     ComponentPermission, IpcMessage, IpcValidationError, IpcValidator,
