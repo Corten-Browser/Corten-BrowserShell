@@ -21,6 +21,8 @@ members = [
     "components/browser_shell",
     "components/shell_app",
     "components/auto_updater",
+    "components/render_engine",
+    "components/sync_manager",
     "tests",
 ]
 
