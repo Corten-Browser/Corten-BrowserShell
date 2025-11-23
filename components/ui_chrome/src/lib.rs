@@ -3,9 +3,31 @@
 //! Browser UI elements including address bar, toolbar, tab bar, and keyboard shortcuts.
 //!
 //! This component provides the browser chrome using egui for rendering the UI.
+//!
+//! # Theme System
+//!
+//! The UI chrome includes a theme system supporting light, dark, and auto modes:
+//!
+//! ```rust,ignore
+//! use ui_chrome::theme::{Theme, ThemeMode, ThemeManager};
+//!
+//! // Create a theme manager
+//! let mut theme_manager = ThemeManager::new();
+//!
+//! // Switch to dark mode
+//! theme_manager.set_mode(ThemeMode::Dark);
+//!
+//! // Apply to egui context
+//! theme_manager.apply(&ctx);
+//! ```
+
+pub mod theme;
 
 use shared_types::{ComponentError, DownloadId, KeyboardShortcut, TabId};
 use std::collections::{HashMap, HashSet};
+
+// Re-export theme types for convenience
+pub use theme::{Theme, ThemeManager, ThemeMode};
 
 /// State for a single tab
 #[derive(Debug, Clone)]

@@ -16,6 +16,9 @@ log = "0.4"
 # Cross-platform notifications
 notify-rust = "4"
 
+# Cross-platform clipboard
+arboard = "3"
+
 # Error handling
 thiserror = "1.0"
 

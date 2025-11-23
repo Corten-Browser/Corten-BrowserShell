@@ -1,7 +1,7 @@
 //! Tests for downloads UI functionality
 
-use ui_chrome::{DownloadDisplay, DownloadDisplayStatus, UiChrome};
 use shared_types::DownloadId;
+use ui_chrome::{DownloadDisplay, DownloadDisplayStatus, UiChrome};
 
 #[test]
 fn test_set_downloads_updates_count() {

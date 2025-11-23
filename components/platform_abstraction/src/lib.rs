@@ -8,12 +8,16 @@
 //!
 //! - **Window Management**: Cross-platform window creation, manipulation, and lifecycle management
 //! - **System Notifications**: Cross-platform notification support with actions and categories
+//! - **Clipboard**: Cross-platform clipboard support for text, HTML, and images
+//! - **File Associations**: Cross-platform file type and protocol registration
 //!
 //! # Phase 1: Stub Implementation
 //!
 //! This is a stub implementation that compiles on all platforms and provides mock functionality.
 //! Full native window integration will be implemented in later phases.
 
+pub mod clipboard;
+pub mod file_associations;
 mod handles;
 pub mod notification;
 mod platform;
@@ -29,4 +33,16 @@ pub use notification::{
     Notification, NotificationAction, NotificationBuilder, NotificationCategory, NotificationConfig,
     NotificationError, NotificationEvent, NotificationId, NotificationPermission, NotificationResult,
     NotificationService, NotificationUrgency, SystemNotificationService,
+};
+
+// Re-export clipboard types at top level for convenience
+pub use clipboard::{
+    clipboard_supported, ClipboardContent, ClipboardError, ClipboardFormat, ClipboardResult,
+    ClipboardService, ImageData, SystemClipboardService,
+};
+
+// Re-export file association types at top level for convenience
+pub use file_associations::{
+    associations_supported, AssociationConfig, AssociationError, AssociationResult,
+    AssociationService, AssociationStatus, FileAssociation, SystemAssociationService,
 };
