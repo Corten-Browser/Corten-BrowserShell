@@ -101,9 +101,10 @@ def create_state_directory():
 
 def initialize_queue_state():
     """Initialize task queue state file (empty but ready)."""
-    queue_state = get_project_root() / "orchestration" / "task_queue" / "queue_state.json"
+    queue_state = get_project_root() / "orchestration" / "tasks" / "queue_state.json"
 
     if not queue_state.exists():
+        queue_state.parent.mkdir(parents=True, exist_ok=True)
         queue_state.write_text(json.dumps({
             "tasks": [],
             "completed_order": [],

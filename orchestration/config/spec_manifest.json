@@ -1,0 +1,19 @@
+{
+  "queue_initialized": true,
+  "spec_file": "/workspaces/ai-orchestration/docs/claude-orchestration-enhanced-spec.md",
+  "spec_files": [
+    "/workspaces/ai-orchestration/docs/claude-orchestration-enhanced-spec.md",
+    "/workspaces/ai-orchestration/specifications/browser-shell-specification.md",
+    "/workspaces/ai-orchestration/specifications/css-engine-specification.md",
+    "/workspaces/ai-orchestration/specifications/devtools-component-specification.md",
+    "/workspaces/ai-orchestration/specifications/dom-component-specification.md",
+    "/workspaces/ai-orchestration/specifications/font-system-specification.md",
+    "/workspaces/ai-orchestration/specifications/frankenstein-browser-specification.md",
+    "/workspaces/ai-orchestration/specifications/javascript-runtime-specification-V2.md",
+    "/workspaces/ai-orchestration/specifications/javascript-runtime-specification.md",
+    "/workspaces/ai-orchestration/specifications/media-engine-specification.md",
+    "/workspaces/ai-orchestration/specifications/network-stack-specification.md"
+  ],
+  "last_sync": "2025-11-18T21:26:19.882088",
+  "task_count": 73
+}

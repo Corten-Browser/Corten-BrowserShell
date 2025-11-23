@@ -1,0 +1,17 @@
+{
+  "last_extraction": "2025-11-19T19:30:00.000000",
+  "extraction_method": "automated",
+  "spec_files": [
+    {
+      "path": "/workspaces/ai-orchestration/docs/claude-orchestration-enhanced-spec.md",
+      "features_extracted": 16,
+      "extraction_method": "automated",
+      "last_processed": "2025-11-18T21:26:19.882347"
+    }
+  ],
+  "total_features": 16,
+  "automated_features": 16,
+  "llm_features": 0,
+  "llm_extraction_complete": false,
+  "llm_extraction_timestamp": null
+}
