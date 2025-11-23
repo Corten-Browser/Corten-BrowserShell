@@ -53,6 +53,8 @@ mod component;
 mod errors;
 mod ids;
 mod keyboard_shortcut;
+pub mod memory_audit;
+pub mod performance;
 pub mod storage;
 mod window_config;
 
@@ -61,6 +63,11 @@ pub use component::*;
 pub use errors::*;
 pub use ids::*;
 pub use keyboard_shortcut::*;
+pub use memory_audit::{AllocationStats, MemoryAudit, MemoryDiff, MemoryTracker};
+pub use performance::{
+    FrameTimer, PerformanceMetrics, PerformanceMonitor, TARGET_FPS, TARGET_FRAME_TIME_MS,
+    TARGET_THROUGHPUT,
+};
 pub use window_config::*;
 
 // Re-export core storage types for convenience
