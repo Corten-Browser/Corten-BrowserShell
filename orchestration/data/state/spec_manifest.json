@@ -1,6 +1,9 @@
 {
-  "spec_file": null,
-  "queue_initialized": false,
-  "last_sync": null,
-  "task_count": 0
+  "spec_file": "/home/dealy/Develop/Corten/Components/BrowserShell/specifications/browser-shell-specification.md",
+  "queue_initialized": true,
+  "last_sync": "2025-11-23T19:03:17.689538",
+  "task_count": 73,
+  "spec_files": [
+    "/home/dealy/Develop/Corten/Components/BrowserShell/specifications/browser-shell-specification.md"
+  ]
 }

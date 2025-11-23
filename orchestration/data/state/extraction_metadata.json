@@ -1,0 +1,17 @@
+{
+  "last_extraction": "2025-11-23T19:03:17.689930",
+  "extraction_method": "automated",
+  "spec_files": [
+    {
+      "path": "/home/dealy/Develop/Corten/Components/BrowserShell/specifications/browser-shell-specification.md",
+      "features_extracted": 73,
+      "extraction_method": "automated",
+      "last_processed": "2025-11-23T19:03:17.689943"
+    }
+  ],
+  "total_features": 73,
+  "automated_features": 73,
+  "llm_features": 0,
+  "llm_extraction_complete": false,
+  "llm_extraction_timestamp": null
+}
