@@ -15,9 +15,12 @@ tokio = { version = "1.0", features = ["full"] }
 url = "2.5"
 chrono = { version = "0.4", features = ["serde"] }
 
+# UI Framework for embedding
+egui.workspace = true
+
 # NOTE: wry dependency commented out - requires system libraries not available in this environment
 # WebView rendering will be implemented in v0.6.0 with proper Tauri integration
-# wry = "0.38"
+# When enabled, add: wry = "0.38"
 
 [dev-dependencies]
 tempfile = "3.8"

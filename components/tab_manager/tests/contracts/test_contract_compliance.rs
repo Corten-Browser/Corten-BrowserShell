@@ -4,7 +4,7 @@
 //! defined in contracts/tab_manager.yaml
 
 use shared_types::{TabId, WindowId};
-use tab_manager::{TabInfo, TabManager};
+use tab_manager::{TabInfo, TabLoadState, TabManager};
 
 #[tokio::test]
 async fn test_tab_manager_has_create_tab_method() {
@@ -136,6 +136,8 @@ fn test_tab_info_has_required_fields() {
         loading: false,
         can_go_back: false,
         can_go_forward: false,
+        is_private: false,
+        load_state: TabLoadState::Unloaded,
     };
 
     // Verify all fields compile and have correct types
@@ -146,6 +148,8 @@ fn test_tab_info_has_required_fields() {
     let _: bool = info.loading;
     let _: bool = info.can_go_back;
     let _: bool = info.can_go_forward;
+    let _: bool = info.is_private;
+    let _: TabLoadState = info.load_state;
 }
 
 #[tokio::test]

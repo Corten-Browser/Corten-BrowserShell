@@ -1,0 +1,35 @@
+name: extensions
+type: backend
+version: "0.1.0"
+description: Browser extension system hooks and APIs
+
+tech_stack:
+  - Rust
+  - tokio (async runtime)
+  - serde (serialization)
+
+dependencies:
+  - shared_types
+
+features:
+  - Extension registration and lifecycle management
+  - Browser action API (toolbar buttons with popups)
+  - Context menu contribution points
+  - Extension messaging (content scripts <-> background)
+  - Permission system for extension capabilities
+  - Manifest parsing (Chrome extension manifest v2/v3 compatible)
+
+public_api:
+  - ExtensionManager
+  - ExtensionHost (trait)
+  - Extension
+  - ExtensionId
+  - BrowserAction
+  - BrowserActionApi
+  - ContextMenuItem
+  - ContextMenuApi
+  - ExtensionMessage
+  - MessagingApi
+  - Permission
+  - PermissionSet
+  - ExtensionManifest

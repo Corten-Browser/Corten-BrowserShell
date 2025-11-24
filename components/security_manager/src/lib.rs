@@ -5,6 +5,35 @@
 //! - Input filtering and XSS prevention
 //! - Content Security Policy enforcement
 //! - Permission management
+//! - IPC message validation with rate limiting
+//! - Password management with encrypted storage
+//! - Privacy management (DNT, cookie blocking, tracking protection)
+//! - Ad blocking and content filtering
+
+pub mod ad_blocker;
+mod ipc_validator;
+pub mod password_manager;
+pub mod privacy;
+
+pub use ad_blocker::{
+    AdBlocker, BlockStats, CheckResult, ContentType, FilterAction, FilterList, FilterRule,
+};
+
+pub use ipc_validator::{
+    ComponentPermission, IpcMessage, IpcValidationError, IpcValidator,
+    MessageValidationConfig, MessageValidator, RateLimitConfig, SuspiciousMessageLog,
+};
+
+pub use password_manager::{
+    BreachCheckResult, Credential, CredentialId, CredentialStore, DecryptedCredential,
+    EncryptedString, PasswordConfig, PasswordError, PasswordGenerator, PasswordStrength,
+    StrengthLevel,
+};
+
+pub use privacy::{
+    BlockReason, Cookie as PrivacyCookie, CookieDecision, CookiePolicy, CookieRules,
+    PrivacyManager, PrivacySettings, TrackingProtectionList,
+};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};

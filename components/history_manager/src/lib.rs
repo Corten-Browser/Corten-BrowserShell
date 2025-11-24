@@ -2,10 +2,13 @@
 //!
 //! Tracks browsing history with timestamps, provides search API,
 //! and manages visit frequency statistics.
+//!
+//! Supports private browsing mode where history is not recorded.
 
 use chrono::{DateTime, Utc};
 use rusqlite::{params, Connection, Result as SqliteResult};
 use serde::{Deserialize, Serialize};
+use shared_types::TabId;
 use std::path::PathBuf;
 use std::sync::Arc;
 use thiserror::Error;
@@ -112,6 +115,47 @@ impl HistoryManager {
         )?;
 
         Ok(())
+    }
+
+    /// Check if history should be recorded for a given tab.
+    ///
+    /// Returns `false` for private/incognito tabs, `true` otherwise.
+    /// This method should be called before recording any history entry.
+    ///
+    /// # Arguments
+    /// * `_tab_id` - The ID of the tab (reserved for future use)
+    /// * `is_private` - Whether the tab is in private browsing mode
+    ///
+    /// # Returns
+    /// `true` if history should be recorded, `false` for private tabs
+    pub fn should_record(&self, _tab_id: TabId, is_private: bool) -> bool {
+        !is_private
+    }
+
+    /// Add a URL visit to history, respecting private browsing mode.
+    ///
+    /// This is the preferred method when the caller has tab context.
+    /// For private tabs, this method returns Ok(0) without recording anything.
+    ///
+    /// # Arguments
+    /// * `url` - The URL to record
+    /// * `title` - The page title
+    /// * `tab_id` - The ID of the tab
+    /// * `is_private` - Whether the tab is in private browsing mode
+    ///
+    /// # Returns
+    /// The history entry ID, or 0 if not recorded (private tab)
+    pub async fn add_visit_with_privacy_check(
+        &self,
+        url: String,
+        title: String,
+        tab_id: TabId,
+        is_private: bool,
+    ) -> Result<i64> {
+        if !self.should_record(tab_id, is_private) {
+            return Ok(0);
+        }
+        self.add_visit(url, title).await
     }
 
     /// Add a URL visit to history
@@ -451,5 +495,139 @@ mod tests {
         let stats = manager.get_stats().await.unwrap();
         assert_eq!(stats.total_entries, 1);
         assert_eq!(stats.total_visits, 2);
+    }
+
+    #[test]
+    fn test_should_record_regular_tab() {
+        let temp_dir = TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test_history.db");
+        let manager = HistoryManager::with_path(db_path).unwrap();
+        let tab_id = TabId::new();
+
+        // Regular tabs should record history
+        assert!(manager.should_record(tab_id, false));
+    }
+
+    #[test]
+    fn test_should_record_private_tab() {
+        let temp_dir = TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test_history.db");
+        let manager = HistoryManager::with_path(db_path).unwrap();
+        let tab_id = TabId::new();
+
+        // Private tabs should NOT record history
+        assert!(!manager.should_record(tab_id, true));
+    }
+
+    #[tokio::test]
+    async fn test_add_visit_with_privacy_check_regular() {
+        let temp_dir = TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test_history.db");
+        let manager = HistoryManager::with_path(db_path).unwrap();
+        let tab_id = TabId::new();
+
+        // Regular tab should record history
+        let id = manager
+            .add_visit_with_privacy_check(
+                "https://example.com".to_string(),
+                "Example".to_string(),
+                tab_id,
+                false,
+            )
+            .await
+            .unwrap();
+
+        assert!(id > 0);
+
+        // Verify it was recorded
+        let results = manager.get_recent(10).await.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].url, "https://example.com");
+    }
+
+    #[tokio::test]
+    async fn test_add_visit_with_privacy_check_private() {
+        let temp_dir = TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test_history.db");
+        let manager = HistoryManager::with_path(db_path).unwrap();
+        let tab_id = TabId::new();
+
+        // Private tab should NOT record history
+        let id = manager
+            .add_visit_with_privacy_check(
+                "https://secret-site.com".to_string(),
+                "Secret".to_string(),
+                tab_id,
+                true,
+            )
+            .await
+            .unwrap();
+
+        // Should return 0 for skipped entry
+        assert_eq!(id, 0);
+
+        // Verify nothing was recorded
+        let results = manager.get_recent(10).await.unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_mixed_private_and_regular_visits() {
+        let temp_dir = TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test_history.db");
+        let manager = HistoryManager::with_path(db_path).unwrap();
+        let regular_tab = TabId::new();
+        let private_tab = TabId::new();
+
+        // Add visits from both regular and private tabs
+        manager
+            .add_visit_with_privacy_check(
+                "https://public1.com".to_string(),
+                "Public 1".to_string(),
+                regular_tab,
+                false,
+            )
+            .await
+            .unwrap();
+
+        manager
+            .add_visit_with_privacy_check(
+                "https://private1.com".to_string(),
+                "Private 1".to_string(),
+                private_tab,
+                true,
+            )
+            .await
+            .unwrap();
+
+        manager
+            .add_visit_with_privacy_check(
+                "https://public2.com".to_string(),
+                "Public 2".to_string(),
+                regular_tab,
+                false,
+            )
+            .await
+            .unwrap();
+
+        manager
+            .add_visit_with_privacy_check(
+                "https://private2.com".to_string(),
+                "Private 2".to_string(),
+                private_tab,
+                true,
+            )
+            .await
+            .unwrap();
+
+        // Only public visits should be recorded
+        let results = manager.get_recent(10).await.unwrap();
+        assert_eq!(results.len(), 2);
+
+        let urls: Vec<&str> = results.iter().map(|r| r.url.as_str()).collect();
+        assert!(urls.contains(&"https://public1.com"));
+        assert!(urls.contains(&"https://public2.com"));
+        assert!(!urls.contains(&"https://private1.com"));
+        assert!(!urls.contains(&"https://private2.com"));
     }
 }

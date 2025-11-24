@@ -5,7 +5,15 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 
+[features]
+default = []
+storage = ["rusqlite", "directories"]
+
 [dependencies]
+# Async support
+async-trait = { workspace = true }
+tokio = { workspace = true }
+
 # Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -15,7 +23,15 @@ thiserror = { workspace = true }
 
 # Common types
 uuid = { workspace = true }
+chrono = { workspace = true }
+
+# Storage dependencies (optional, enabled via "storage" feature)
+rusqlite = { version = "0.30", features = ["bundled"], optional = true }
+directories = { version = "5.0", optional = true }
 
 [dev-dependencies]
 # Serialization tests
 serde_json = { workspace = true }
+tempfile = "3.8"
+rusqlite = { version = "0.30", features = ["bundled"] }
+directories = "5.0"

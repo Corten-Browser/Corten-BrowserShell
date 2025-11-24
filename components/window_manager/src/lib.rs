@@ -1,10 +1,51 @@
 //! Window Manager Component
 //!
 //! Browser window lifecycle management including creation, resizing, focus, and multi-window support.
+//!
+//! # Multi-Window Tab Drag
+//!
+//! The [`tab_drag`] module provides cross-window tab drag and drop functionality:
+//!
+//! ```rust,ignore
+//! use window_manager::tab_drag::{TabDragManager, TabTransferData};
+//!
+//! let mut manager = TabDragManager::new();
+//! manager.start_drag(tab_id, window_id, position, transfer_data);
+//! ```
+//!
+//! # Picture-in-Picture
+//!
+//! The [`pip`] module provides floating video window support:
+//!
+//! ```rust,ignore
+//! use window_manager::pip::{PipManager, PipConfig, PipVideoSource};
+//!
+//! let mut manager = PipManager::new();
+//! let source = PipVideoSource::new(tab_id, "video-element-1".to_string());
+//! let pip_id = manager.create_pip_window(source, PipConfig::default())?;
+//! ```
+
+pub mod pip;
+pub mod tab_drag;
 
 use platform_abstraction::{PlatformHandle, PlatformWindow};
 use shared_types::{TabId, WindowConfig, WindowError, WindowId};
 use std::collections::HashMap;
+
+// Re-export commonly used tab drag types
+pub use tab_drag::{
+    CrossWindowMessage, DragFeedback, DragSession, DropIndicator, HistoryEntry, Position,
+    Rectangle, TabDragError, TabDragManager, TabDragState, TabTransferData, WindowDropTarget,
+};
+
+// Re-export commonly used PiP types
+pub use pip::{
+    ExtractedVideoInfo, PipBounds, PipConfig, PipControlAction, PipControls, PipCorner, PipError,
+    PipManager, PipPosition, PipSize, PipState, PipVideoSource, PipWindow, PipWindowId,
+    StubVideoExtractor, VideoExtractionError, VideoExtractor, DEFAULT_PIP_HEIGHT,
+    DEFAULT_PIP_OPACITY, DEFAULT_PIP_WIDTH, MAX_PIP_HEIGHT, MAX_PIP_WINDOWS, MAX_PIP_WIDTH,
+    MIN_PIP_HEIGHT, MIN_PIP_WIDTH,
+};
 
 /// Represents a browser window
 pub struct Window<P: PlatformWindow> {
@@ -204,7 +245,7 @@ mod tests {
     impl PlatformWindow for MockPlatformWindow {
         fn create(_config: &WindowConfig) -> Result<Self, WindowError> {
             Ok(Self {
-                handle: PlatformHandle::Linux(platform_abstraction::LinuxHandle { window: 1 }),
+                handle: PlatformHandle::Stub(platform_abstraction::StubHandle { id: 1 }),
             })
         }
 

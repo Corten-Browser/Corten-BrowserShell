@@ -12,7 +12,7 @@ struct MockPlatformWindow {
 impl PlatformWindow for MockPlatformWindow {
     fn create(_config: &WindowConfig) -> Result<Self, WindowError> {
         Ok(Self {
-            handle: PlatformHandle::Linux(platform_abstraction::LinuxHandle { window: 12345 }),
+            handle: PlatformHandle::LinuxX11(platform_abstraction::LinuxX11Handle { window: 12345, display: 0, screen: 0, visual_id: 0 }),
         })
     }
 
@@ -128,7 +128,7 @@ fn test_window_has_platform_handle() {
     let window = Window::new(config, platform_window);
 
     match window.platform_handle {
-        PlatformHandle::Linux(handle) => assert_eq!(handle.window, 12345),
+        PlatformHandle::LinuxX11(handle) => assert_eq!(handle.window, 12345),
         _ => panic!("Expected Linux handle"),
     }
 }

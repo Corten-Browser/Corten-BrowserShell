@@ -3,13 +3,13 @@
 //! These tests verify that window_manager correctly integrates with the
 //! platform_abstraction component using real platform window implementations.
 
-use platform_abstraction::LinuxWindow;
+use platform_abstraction::LinuxX11Window;
 use shared_types::{WindowConfig, WindowError};
 use window_manager::WindowManager;
 
 #[tokio::test]
 async fn test_create_window_with_linux_platform() {
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
     let config = WindowConfig {
         title: "Integration Test Window".to_string(),
         width: 1024,
@@ -29,7 +29,7 @@ async fn test_create_window_with_linux_platform() {
 
 #[tokio::test]
 async fn test_window_lifecycle_with_platform() {
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
 
     // Create window
     let window_id = manager
@@ -75,7 +75,7 @@ async fn test_window_lifecycle_with_platform() {
 
 #[tokio::test]
 async fn test_multiple_windows_with_platform() {
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
 
     // Create multiple windows
     let id1 = manager
@@ -112,7 +112,7 @@ async fn test_multiple_windows_with_platform() {
 
 #[tokio::test]
 async fn test_window_config_persistence() {
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
 
     let original_config = WindowConfig {
         title: "Test Window".to_string(),
@@ -152,7 +152,7 @@ async fn test_window_config_persistence() {
 
 #[tokio::test]
 async fn test_error_handling_with_platform() {
-    let mut manager = WindowManager::<LinuxWindow>::new();
+    let mut manager = WindowManager::<LinuxX11Window>::new();
 
     // Create a window
     let window_id = manager

@@ -1,7 +1,7 @@
 //! Unit tests for Tab struct
 
 use shared_types::{ProcessId, RenderSurfaceId, TabId, WindowId};
-use tab_manager::{Tab, TabInfo};
+use tab_manager::{Tab, TabInfo, TabLoadState};
 use url::Url;
 
 #[test]
@@ -27,6 +27,8 @@ fn test_tab_creation() {
         favicon: None,
         process_id: None,
         render_surface,
+        is_private: false,
+        load_state: TabLoadState::Unloaded,
     };
 
     assert_eq!(tab.id, tab_id);
@@ -38,6 +40,8 @@ fn test_tab_creation() {
     assert_eq!(tab.can_go_forward, false);
     assert_eq!(tab.favicon, None);
     assert_eq!(tab.process_id, None);
+    assert_eq!(tab.is_private, false);
+    assert_eq!(tab.load_state, TabLoadState::Unloaded);
 }
 
 #[test]
@@ -63,6 +67,8 @@ fn test_tab_with_process_id() {
         favicon: None,
         process_id: Some(process_id),
         render_surface,
+        is_private: false,
+        load_state: TabLoadState::Unloaded,
     };
 
     assert_eq!(tab.process_id, Some(process_id));
@@ -91,6 +97,8 @@ fn test_tab_info_from_tab() {
         favicon: None,
         process_id: None,
         render_surface,
+        is_private: false,
+        load_state: TabLoadState::Loaded,
     };
 
     let info = TabInfo::from(&tab);
@@ -102,4 +110,6 @@ fn test_tab_info_from_tab() {
     assert_eq!(info.loading, true);
     assert_eq!(info.can_go_back, true);
     assert_eq!(info.can_go_forward, false);
+    assert_eq!(info.is_private, false);
+    assert_eq!(info.load_state, TabLoadState::Loaded);
 }

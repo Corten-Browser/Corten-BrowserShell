@@ -1,6 +1,6 @@
 {
-  "last_extraction": "2025-11-23T19:03:17.689930",
-  "extraction_method": "automated",
+  "last_extraction": "2025-11-23T19:30:00.000000",
+  "extraction_method": "hybrid",
   "spec_files": [
     {
       "path": "/home/dealy/Develop/Corten/Components/BrowserShell/specifications/browser-shell-specification.md",
@@ -9,9 +9,29 @@
       "last_processed": "2025-11-23T19:03:17.689943"
     }
   ],
-  "total_features": 73,
-  "automated_features": 73,
-  "llm_features": 0,
-  "llm_extraction_complete": false,
-  "llm_extraction_timestamp": null
+  "total_features": 60,
+  "automated_features": 33,
+  "llm_features": 27,
+  "llm_extraction_complete": true,
+  "llm_extraction_timestamp": "2025-11-23T19:30:00.000000",
+  "detected_language": "rust",
+  "language_confidence": "high",
+  "extraction_summary": {
+    "duplicates_removed": 40,
+    "features_enriched": 33,
+    "new_features_added": 27,
+    "categories": {
+      "core_milestones": 30,
+      "platform": 4,
+      "architecture": 4,
+      "security": 4,
+      "extensions": 5,
+      "privacy": 3,
+      "performance": 1,
+      "storage": 1,
+      "ui": 1,
+      "phase_4_advanced": 5,
+      "network": 1
+    }
+  }
 }

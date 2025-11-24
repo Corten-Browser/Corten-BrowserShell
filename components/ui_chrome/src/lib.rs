@@ -3,9 +3,94 @@
 //! Browser UI elements including address bar, toolbar, tab bar, and keyboard shortcuts.
 //!
 //! This component provides the browser chrome using egui for rendering the UI.
+//!
+//! # Theme System
+//!
+//! The UI chrome includes a theme system supporting light, dark, and auto modes:
+//!
+//! ```rust,ignore
+//! use ui_chrome::theme::{Theme, ThemeMode, ThemeManager};
+//!
+//! // Create a theme manager
+//! let mut theme_manager = ThemeManager::new();
+//!
+//! // Switch to dark mode
+//! theme_manager.set_mode(ThemeMode::Dark);
+//!
+//! // Apply to egui context
+//! theme_manager.apply(&ctx);
+//! ```
+//!
+//! # Developer Tools
+//!
+//! The component includes a Chrome-style developer tools panel:
+//!
+//! ```rust,ignore
+//! use ui_chrome::devtools::{DevToolsPanel, DevToolsConfig, DockPosition};
+//!
+//! // Create dev tools panel
+//! let mut devtools = DevToolsPanel::default();
+//!
+//! // Toggle visibility with F12 or menu
+//! devtools.toggle();
+//!
+//! // Log to console
+//! devtools.console_log("Hello from devtools!");
+//! devtools.console_error("An error occurred");
+//!
+//! // Track network requests
+//! let id = devtools.add_network_request(HttpMethod::GET, "https://example.com/api");
+//! devtools.complete_network_request(id, 200, Some("application/json".to_string()));
+//!
+//! // Render the panel
+//! devtools.show(&ctx);
+//! ```
+//!
+//! # Print Support
+//!
+//! The UI chrome includes print support with preview, settings, and job tracking:
+//!
+//! ```rust,ignore
+//! use ui_chrome::print::{PrintManager, PrintSettings, PaperSize, Orientation};
+//!
+//! // Create print manager
+//! let mut print_manager = PrintManager::new();
+//!
+//! // Configure settings
+//! let settings = PrintSettings::default()
+//!     .with_paper_size(PaperSize::A4)
+//!     .with_orientation(Orientation::Portrait)
+//!     .with_scale(100);
+//!
+//! // Show print preview
+//! print_manager.show_preview_with_settings(settings);
+//!
+//! // Create a print job
+//! let job_id = print_manager.create_job("Document.pdf".to_string(), 10);
+//! ```
+
+pub mod devtools;
+pub mod print;
+pub mod theme;
 
 use shared_types::{ComponentError, DownloadId, KeyboardShortcut, TabId};
 use std::collections::{HashMap, HashSet};
+
+// Re-export theme types for convenience
+pub use theme::{Theme, ThemeManager, ThemeMode};
+
+// Re-export devtools types for convenience
+pub use devtools::{
+    ConsoleLevel, ConsoleMessage, DevToolsConfig, DevToolsPanel, DevToolsState, DevToolsTab,
+    DockPosition, HttpMethod, NetworkInspectorEntry, NetworkStatus, NetworkTiming,
+};
+
+// Re-export print types for convenience
+pub use print::{
+    Orientation, PageRange, PaperSize, PrintDestination, PrintError, PrintJob, PrintJobId,
+    PrintJobStatus, PrintManager, PrintManagerResponse, PrintMargins, PrintPreview,
+    PrintPreviewResponse, PrintQuality, PrintSettings,
+};
 
 /// State for a single tab
 #[derive(Debug, Clone)]

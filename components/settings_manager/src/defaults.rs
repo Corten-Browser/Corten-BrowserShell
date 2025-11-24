@@ -121,6 +121,11 @@ pub fn create_defaults() -> HashMap<String, SettingValue> {
         "network.enable_quic".to_string(),
         SettingValue::Boolean(true),
     );
+    // HTTP/3 support (uses QUIC as transport layer)
+    defaults.insert(
+        "network.enable_http3".to_string(),
+        SettingValue::Boolean(true),
+    );
 
     // Privacy settings (from spec lines 1335-1338)
     defaults.insert(
@@ -169,6 +174,21 @@ mod tests {
         assert_eq!(
             defaults.get("window.default_width"),
             Some(&SettingValue::Integer(1024))
+        );
+    }
+
+    #[test]
+    fn test_defaults_network_quic_http3_settings() {
+        let defaults = create_defaults();
+        // QUIC setting (FEAT-100)
+        assert_eq!(
+            defaults.get("network.enable_quic"),
+            Some(&SettingValue::Boolean(true))
+        );
+        // HTTP/3 setting (FEAT-100)
+        assert_eq!(
+            defaults.get("network.enable_http3"),
+            Some(&SettingValue::Boolean(true))
         );
     }
 }

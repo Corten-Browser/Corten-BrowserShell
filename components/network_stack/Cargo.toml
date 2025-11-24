@@ -1,0 +1,33 @@
+[package]
+name = "network_stack"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Network stack abstraction for HTTP requests and resource loading"
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+url = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json", "cookies", "gzip", "brotli", "deflate"] }
+
+# Header handling
+http = "0.2"
+
+# Internal dependencies
+shared_types = { path = "../shared_types" }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
+mockall = { workspace = true }
+wiremock = "0.5"
