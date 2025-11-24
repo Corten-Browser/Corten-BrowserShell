@@ -580,11 +580,40 @@ class InstallManager:
         source_orch = self.source_dir / "orchestration"
         target_orch = self.target_dir / "orchestration"
 
+        # Files/directories to exclude (runtime state, not static code)
+        def ignore_runtime_state(directory: str, files: list) -> list:
+            """Ignore function for shutil.copytree - excludes runtime state files."""
+            ignored = []
+            dir_path = Path(directory)
+
+            for f in files:
+                file_path = dir_path / f
+                # Exclude runtime state files that should be generated, not copied
+                if f in [
+                    'extraction_metadata.json',
+                    'spec_manifest.json',
+                    'queue_state.json',
+                    'completion_state.json',
+                    'orchestration_state.json',
+                    'enforcement_log.json',
+                    'monitor_log.json',
+                ]:
+                    ignored.append(f)
+                # Exclude the entire data/ directory contents (runtime state)
+                # but keep the directory structure
+                elif 'orchestration/data/state' in str(file_path) and f.endswith('.json'):
+                    ignored.append(f)
+                # Exclude __pycache__ directories
+                elif f == '__pycache__':
+                    ignored.append(f)
+
+            return ignored
+
         if source_orch.exists():
             if target_orch.exists():
                 shutil.rmtree(target_orch)
-            shutil.copytree(source_orch, target_orch)
-            print("    ✓ Copied orchestration/")
+            shutil.copytree(source_orch, target_orch, ignore=ignore_runtime_state)
+            print("    ✓ Copied orchestration/ (excluding runtime state files)")
 
         # Copy commands from orchestration/commands/ to .claude/commands/
         # Commands are stored as source files in orchestration/commands/
@@ -743,9 +772,9 @@ class InstallManager:
         return True
 
     def _create_config_files(self) -> bool:
-        """Create enforcement_config.json and spec_manifest.json"""
+        """Create enforcement_config.json (spec_manifest.json created by auto_init.py)"""
         if self.dry_run:
-            print("[DRY-RUN] Would create enforcement_config.json and spec_manifest.json")
+            print("[DRY-RUN] Would create enforcement_config.json")
             return True
 
         print("Creating additional configuration files...")
@@ -753,7 +782,7 @@ class InstallManager:
         config_dir = self.target_dir / "orchestration" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
 
-        # enforcement_config.json
+        # enforcement_config.json - static config, belongs in config/
         enforcement_config_path = config_dir / "enforcement_config.json"
         if not enforcement_config_path.exists():
             enforcement_config = {
@@ -770,18 +799,13 @@ class InstallManager:
                 json.dump(enforcement_config, f, indent=2)
             ColoredLogger.success("Created enforcement_config.json")
 
-        # spec_manifest.json
-        spec_manifest_path = config_dir / "spec_manifest.json"
-        if not spec_manifest_path.exists():
-            spec_manifest = {
-                "spec_file": None,
-                "queue_initialized": False,
-                "last_sync": None,
-                "task_count": 0
-            }
-            with open(spec_manifest_path, 'w') as f:
-                json.dump(spec_manifest, f, indent=2)
-            ColoredLogger.success("Created spec_manifest.json")
+        # NOTE: spec_manifest.json is NOT created here anymore
+        # It is runtime state created by auto_init.py in orchestration/data/state/
+        # Creating it here with empty values would be overwritten anyway
+
+        # Ensure data/state directory exists for runtime files
+        state_dir = self.target_dir / "orchestration" / "data" / "state"
+        state_dir.mkdir(parents=True, exist_ok=True)
 
         return True
 

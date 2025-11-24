@@ -21,6 +21,29 @@ from orchestration.core.paths import DataPaths
 _paths = DataPaths()
 
 
+def to_relative_path(path: Path) -> str:
+    """
+    Convert a path to relative (from current working directory) for portability.
+
+    Paths stored in JSON files should be relative so they work after:
+    - Git checkout to different machines
+    - Projects moved to different directories
+
+    Args:
+        path: Absolute or relative Path object
+
+    Returns:
+        Relative path string, or original string if conversion fails
+    """
+    try:
+        # Try to make relative to current working directory
+        return str(path.relative_to(Path.cwd()))
+    except ValueError:
+        # If path is not under cwd, try to make it relative to its own parent
+        # This handles edge cases but shouldn't normally happen
+        return str(path)
+
+
 def discover_specs() -> list[Path]:
     """
     Find spec files in standard locations.
@@ -372,7 +395,7 @@ def validate_spec(spec_file: Path) -> tuple[bool, str]:
 
 
 def save_extraction_metadata(spec_files: list[Path], features_by_file: dict[str, int],
-                             total_features: int) -> None:
+                             total_features: int, automated_success: bool = True) -> None:
     """
     Save metadata about what was extracted for /orch-extract-features to use.
 
@@ -380,15 +403,16 @@ def save_extraction_metadata(spec_files: list[Path], features_by_file: dict[str,
         spec_files: List of spec files processed
         features_by_file: Dict mapping file path to feature count
         total_features: Total features extracted
+        automated_success: Whether automated extraction found any features
     """
     metadata = {
         "last_extraction": datetime.now().isoformat(),
-        "extraction_method": "automated",
+        "extraction_method": "automated" if automated_success else "pending-llm",
         "spec_files": [
             {
-                "path": str(f),
+                "path": to_relative_path(f),
                 "features_extracted": features_by_file.get(str(f), 0),
-                "extraction_method": "automated",
+                "extraction_method": "automated" if features_by_file.get(str(f), 0) > 0 else "none",
                 "last_processed": datetime.now().isoformat()
             }
             for f in spec_files
@@ -398,7 +422,9 @@ def save_extraction_metadata(spec_files: list[Path], features_by_file: dict[str,
         "llm_features": 0,
         # LLM extraction must run at least once to validate/supplement automated extraction
         "llm_extraction_complete": False,
-        "llm_extraction_timestamp": None
+        "llm_extraction_timestamp": None,
+        # Indicates whether automated regex patterns found any features
+        "automated_extraction_success": automated_success
     }
 
     metadata_file = _paths.extraction_metadata
@@ -574,14 +600,25 @@ def initialize_queue_from_multiple_specs(spec_files: list[Path]) -> bool:
             print(f"  - {error}")
         print("")
 
+    # Track whether automated extraction found features
+    automated_success = bool(all_features)
+
     if not all_features:
-        print("Error: No valid features extracted from any specification")
-        return False
+        print("")
+        print("=" * 60)
+        print("⚠️  NO FEATURES EXTRACTED BY AUTOMATED PATTERNS")
+        print("=" * 60)
+        print("")
+        print("The automated regex patterns didn't match your spec format.")
+        print("This is OK - LLM extraction can find features that regex missed.")
+        print("")
+        print("Creating empty queue for LLM extraction...")
+        all_features = []  # Ensure it's an empty list
+    else:
+        print("")
+        print(f"Extracted {len(all_features)} total features from {len(spec_files)} file(s)")
 
-    print("")
-    print(f"Extracted {len(all_features)} total features from {len(spec_files)} file(s)")
-
-    # Create tasks
+    # Create tasks (may be empty if no features found)
     tasks = create_tasks_from_features(all_features)
 
     # Save to queue state
@@ -590,8 +627,8 @@ def initialize_queue_from_multiple_specs(spec_files: list[Path]) -> bool:
         "completed_order": [],
         "last_updated": datetime.now().isoformat(),
         "initialized": True,
-        "spec_file": str(spec_files[0]),  # Backwards compatibility
-        "spec_files": [str(f) for f in spec_files],  # Multiple specs
+        "spec_file": to_relative_path(spec_files[0]),  # Backwards compatibility
+        "spec_files": [to_relative_path(f) for f in spec_files],  # Multiple specs
         "total_features": len(all_features)
     }
 
@@ -610,33 +647,36 @@ def initialize_queue_from_multiple_specs(spec_files: list[Path]) -> bool:
         manifest = {}
 
     manifest["queue_initialized"] = True
-    manifest["spec_file"] = str(spec_files[0])  # Backwards compatibility
-    manifest["spec_files"] = [str(f) for f in spec_files]  # Multiple specs
+    manifest["spec_file"] = to_relative_path(spec_files[0])  # Backwards compatibility
+    manifest["spec_files"] = [to_relative_path(f) for f in spec_files]  # Multiple specs
     manifest["last_sync"] = datetime.now().isoformat()
     manifest["task_count"] = len(tasks)
 
     manifest_file.write_text(json.dumps(manifest, indent=2))
 
-    # NEW: Save extraction metadata
-    save_extraction_metadata(spec_files, features_by_file, len(all_features))
+    # Save extraction metadata (pass automated_success flag)
+    save_extraction_metadata(spec_files, features_by_file, len(all_features), automated_success)
 
-    # Print reminder that LLM extraction is required
-    metadata_file = _paths.extraction_metadata
-    if metadata_file.exists():
-        metadata = json.loads(metadata_file.read_text())
-        if not metadata.get("llm_extraction_complete", False):
-            print("")
-            print("=" * 60)
-            print("💡 LLM EXTRACTION REQUIRED")
-            print("=" * 60)
-            print("")
-            print(f"Automated extraction found {len(all_features)} features.")
-            print("LLM extraction must run to find features that regex patterns missed.")
-            print("")
-            print("Run: /orch-extract-features")
-            print("=" * 60)
+    # Print reminder that LLM extraction is required/recommended
+    print("")
+    print("=" * 60)
+    if automated_success:
+        print("💡 LLM EXTRACTION RECOMMENDED")
+        print("=" * 60)
+        print("")
+        print(f"Automated extraction found {len(all_features)} features.")
+        print("LLM extraction can find additional features that regex patterns missed.")
+    else:
+        print("🔴 LLM EXTRACTION REQUIRED")
+        print("=" * 60)
+        print("")
+        print("No features were found by automated extraction.")
+        print("LLM extraction is REQUIRED to populate the task queue.")
+    print("")
+    print("Run: /orch-extract-features")
+    print("=" * 60)
 
-    # NEW: Auto-commit if in git repo
+    # Auto-commit if in git repo
     auto_commit_extraction("automated", len(all_features), len(all_features))
 
     return True
@@ -685,7 +725,7 @@ def initialize_queue_from_spec(spec_file: Path) -> bool:
         "completed_order": [],
         "last_updated": datetime.now().isoformat(),
         "initialized": True,
-        "spec_file": str(spec_file),
+        "spec_file": to_relative_path(spec_file),
         "total_features": len(features)
     }
 
@@ -704,7 +744,7 @@ def initialize_queue_from_spec(spec_file: Path) -> bool:
         manifest = {}
 
     manifest["queue_initialized"] = True
-    manifest["spec_file"] = str(spec_file)
+    manifest["spec_file"] = to_relative_path(spec_file)
     manifest["last_sync"] = datetime.now().isoformat()
     manifest["task_count"] = len(tasks)
 
@@ -908,12 +948,17 @@ def update_queue_from_specs() -> bool:
             print(f"  - {error}")
         print("")
 
-    if not all_features:
-        print("Error: No valid features extracted")
-        return False
+    # Track whether automated extraction found features
+    automated_success = bool(all_features)
 
-    print("")
-    print(f"Extracted {len(all_features)} features from specs")
+    if not all_features:
+        print("")
+        print("⚠️  No features extracted from specs by automated patterns")
+        print("   Existing queue will be preserved. Run /orch-extract-features for LLM extraction.")
+        all_features = []  # Ensure it's an empty list
+    else:
+        print("")
+        print(f"Extracted {len(all_features)} features from specs")
     print("")
 
     # Merge with existing tasks
@@ -982,8 +1027,8 @@ def update_queue_from_specs() -> bool:
         "completed_order": existing_state.get("completed_order", []),
         "last_updated": datetime.now().isoformat(),
         "initialized": True,
-        "spec_file": str(spec_files[0]),  # Backwards compatibility
-        "spec_files": [str(f) for f in spec_files],
+        "spec_file": to_relative_path(spec_files[0]),  # Backwards compatibility
+        "spec_files": [to_relative_path(f) for f in spec_files],
         "total_features": len(all_features)
     }
 
@@ -996,33 +1041,36 @@ def update_queue_from_specs() -> bool:
         manifest = {}
 
     manifest["queue_initialized"] = True
-    manifest["spec_file"] = str(spec_files[0])
-    manifest["spec_files"] = [str(f) for f in spec_files]
+    manifest["spec_file"] = to_relative_path(spec_files[0])
+    manifest["spec_files"] = [to_relative_path(f) for f in spec_files]
     manifest["last_sync"] = datetime.now().isoformat()
     manifest["task_count"] = len(updated_tasks)
 
     manifest_file.write_text(json.dumps(manifest, indent=2))
 
-    # NEW: Save extraction metadata
-    save_extraction_metadata(spec_files, features_by_file, len(all_features))
+    # Save extraction metadata (pass automated_success flag)
+    save_extraction_metadata(spec_files, features_by_file, len(all_features), automated_success)
 
-    # Print reminder that LLM extraction is required
-    metadata_file = _paths.extraction_metadata
-    if metadata_file.exists():
-        metadata = json.loads(metadata_file.read_text())
-        if not metadata.get("llm_extraction_complete", False):
-            print("")
-            print("=" * 60)
-            print("💡 LLM EXTRACTION REQUIRED")
-            print("=" * 60)
-            print("")
-            print(f"Automated extraction found {len(all_features)} features.")
-            print("LLM extraction must run to find features that regex patterns missed.")
-            print("")
-            print("Run: /orch-extract-features")
-            print("=" * 60)
+    # Print reminder that LLM extraction is required/recommended
+    print("")
+    print("=" * 60)
+    if automated_success:
+        print("💡 LLM EXTRACTION RECOMMENDED")
+        print("=" * 60)
+        print("")
+        print(f"Automated extraction found {len(all_features)} features.")
+        print("LLM extraction can find additional features that regex patterns missed.")
+    else:
+        print("🔴 LLM EXTRACTION REQUIRED")
+        print("=" * 60)
+        print("")
+        print("No NEW features were found by automated extraction.")
+        print("LLM extraction is REQUIRED to find features in your specs.")
+    print("")
+    print("Run: /orch-extract-features")
+    print("=" * 60)
 
-    # NEW: Auto-commit if in git repo
+    # Auto-commit if in git repo
     auto_commit_extraction("automated", len(new_features), len(updated_tasks))
 
     print("Queue updated successfully")
