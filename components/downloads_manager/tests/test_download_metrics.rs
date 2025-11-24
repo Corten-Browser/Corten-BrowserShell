@@ -207,25 +207,42 @@ async fn test_metrics_for_paused_download() {
         .await
         .unwrap();
 
-    // Wait for download to start (200ms should be enough for mock download)
-    tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+    // Wait for download to start and progress a bit (50ms is enough, download takes ~1.1 seconds)
+    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+
+    // Verify download is in progress before pausing
+    let initial_metrics = manager.get_download_metrics(id).await.unwrap();
+    assert!(
+        initial_metrics.info.status == DownloadStatus::Downloading
+        || initial_metrics.info.status == DownloadStatus::Pending,
+        "Expected download to be in progress, got {:?}", initial_metrics.info.status
+    );
+
+    // Send pause signal
     manager.pause_download(id).await.unwrap();
 
-    // Poll for pause status to be processed (more robust than fixed wait)
+    // Poll for pause status to be processed - increase timeout significantly
+    // The tokio runtime may need time to schedule the download task to process the pause signal
     let mut pause_confirmed = false;
-    for _ in 0..50 {
-        // Try up to 500ms
+    let mut final_status = None;
+    for _ in 0..100 {
+        // Try up to 1000ms
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
         let metrics = manager.get_download_metrics(id).await.unwrap();
+        final_status = Some(metrics.info.status.clone());
         if metrics.info.status == DownloadStatus::Paused {
             pause_confirmed = true;
+            break;
+        }
+        // If download completed, break early (test should fail gracefully)
+        if metrics.info.status == DownloadStatus::Complete {
             break;
         }
     }
 
     assert!(
         pause_confirmed,
-        "Download should have transitioned to Paused status"
+        "Download should have transitioned to Paused status, got {:?}", final_status
     );
 
     // Get metrics for paused download

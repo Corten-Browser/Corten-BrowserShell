@@ -6,17 +6,17 @@
       "description": "Window creation and management with multi-window support, including create, close, resize, move, focus operations",
       "feature_id": "FEAT-001",
       "dependencies": [],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 1",
       "difficulty": "medium",
       "estimated_loc": "2000-3000",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/window_manager/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-002",
@@ -26,17 +26,17 @@
       "dependencies": [
         "FEAT-001"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 1",
       "difficulty": "medium",
       "estimated_loc": "2500-3500",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/tab_manager/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-003",
@@ -46,17 +46,17 @@
       "dependencies": [
         "FEAT-002"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 1",
       "difficulty": "easy",
       "estimated_loc": "500-800",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/ui_chrome/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-004",
@@ -64,17 +64,17 @@
       "description": "Central message bus for inter-component communication with async processing, routing, and priority handling",
       "feature_id": "FEAT-004",
       "dependencies": [],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 1",
       "difficulty": "hard",
       "estimated_loc": "3000-4000",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/message_bus/src/bus.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-005",
@@ -84,17 +84,17 @@
       "dependencies": [
         "FEAT-004"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 1",
       "difficulty": "medium",
       "estimated_loc": "1500-2000",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/message_bus/src/bus.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-006",
@@ -104,17 +104,17 @@
       "dependencies": [
         "FEAT-003"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 2",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/ui_chrome/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-007",
@@ -124,17 +124,17 @@
       "dependencies": [
         "FEAT-002"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 2",
       "difficulty": "medium",
       "estimated_loc": "1500-2000",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/ui_chrome/src/lib.rs (MEDIUM confidence - drag-drop partial)"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-008",
@@ -144,17 +144,17 @@
       "dependencies": [
         "FEAT-006"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 2",
       "difficulty": "medium",
       "estimated_loc": "1200-1800",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/ui_chrome/src/lib.rs (context menus)"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-009",
@@ -164,17 +164,17 @@
       "dependencies": [
         "FEAT-008"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 2",
       "difficulty": "medium",
       "estimated_loc": "800-1200",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/ui_chrome/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-010",
@@ -184,17 +184,17 @@
       "dependencies": [
         "FEAT-008"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 2",
       "difficulty": "medium",
       "estimated_loc": "2000-3000",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/settings_manager/ + components/ui_chrome/"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-011",
@@ -204,17 +204,17 @@
       "dependencies": [
         "FEAT-004"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 3",
       "difficulty": "hard",
       "estimated_loc": "2500-3500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-012",
@@ -224,17 +224,17 @@
       "dependencies": [
         "FEAT-011"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 3",
       "difficulty": "hard",
       "estimated_loc": "4000-6000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-013",
@@ -244,17 +244,17 @@
       "dependencies": [
         "FEAT-012"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 3",
       "difficulty": "hard",
       "estimated_loc": "3000-4000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-014",
@@ -264,17 +264,17 @@
       "dependencies": [
         "FEAT-011"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 3",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-015",
@@ -284,17 +284,17 @@
       "dependencies": [
         "FEAT-005"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 3",
       "difficulty": "hard",
       "estimated_loc": "3500-5000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-016",
@@ -304,17 +304,17 @@
       "dependencies": [
         "FEAT-011"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 4",
       "difficulty": "medium",
       "estimated_loc": "2000-2500",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/downloads_manager/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-017",
@@ -324,17 +324,17 @@
       "dependencies": [
         "FEAT-010"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 4",
       "difficulty": "medium",
       "estimated_loc": "2000-2500",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/bookmarks_manager/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-018",
@@ -344,17 +344,17 @@
       "dependencies": [
         "FEAT-002"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 4",
       "difficulty": "medium",
       "estimated_loc": "1500-2000",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/history_manager/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-019",
@@ -364,17 +364,17 @@
       "dependencies": [
         "FEAT-012"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 4",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/find_in_page/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-020",
@@ -384,16 +384,17 @@
       "dependencies": [
         "FEAT-012"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:55:11.517814Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 4",
       "difficulty": "hard",
       "estimated_loc": "2000-3000",
-      "completion_method": "batch-7-implementation"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-021",
@@ -401,17 +402,17 @@
       "description": "Native system notification integration for downloads, alerts, and web notifications",
       "feature_id": "FEAT-021",
       "dependencies": [],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 5",
       "difficulty": "medium",
       "estimated_loc": "800-1200",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-022",
@@ -419,17 +420,17 @@
       "description": "System clipboard read/write for copy, cut, paste operations with web content",
       "feature_id": "FEAT-022",
       "dependencies": [],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 5",
       "difficulty": "medium",
       "estimated_loc": "600-1000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-023",
@@ -439,17 +440,17 @@
       "dependencies": [
         "FEAT-022"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 5",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-024",
@@ -457,17 +458,17 @@
       "description": "Register browser as handler for HTML, PDF, and web file types with OS",
       "feature_id": "FEAT-024",
       "dependencies": [],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 5",
       "difficulty": "medium",
       "estimated_loc": "800-1200",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-025",
@@ -477,17 +478,17 @@
       "dependencies": [
         "FEAT-011"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 5",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-026",
@@ -497,17 +498,17 @@
       "dependencies": [
         "FEAT-012"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 6",
       "difficulty": "hard",
       "estimated_loc": "2000-3000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-027",
@@ -517,17 +518,17 @@
       "dependencies": [
         "FEAT-026"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 6",
       "difficulty": "hard",
       "estimated_loc": "1500-2500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-028",
@@ -537,17 +538,17 @@
       "dependencies": [
         "FEAT-004"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 6",
       "difficulty": "hard",
       "estimated_loc": "2000-3000",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/security_manager/src/lib.rs"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-029",
@@ -558,17 +559,17 @@
         "FEAT-002",
         "FEAT-010"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 6",
       "difficulty": "hard",
       "estimated_loc": "2000-2500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-030",
@@ -578,17 +579,17 @@
       "dependencies": [
         "FEAT-016"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-checklist-bare",
       "enriched_by_llm": true,
       "phase": "Milestone 6",
       "difficulty": "hard",
       "estimated_loc": "2500-3500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-031",
@@ -599,17 +600,17 @@
         "FEAT-006",
         "FEAT-007"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-deliverables",
       "enriched_by_llm": true,
       "phase": "Phase 2",
       "difficulty": "hard",
       "estimated_loc": "5000-8000",
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/ui_chrome/src/lib.rs (~1095 lines, full egui browser chrome)"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-032",
@@ -619,17 +620,17 @@
       "dependencies": [
         "FEAT-031"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-deliverables",
       "enriched_by_llm": true,
       "phase": "Phase 2",
       "difficulty": "hard",
       "estimated_loc": "2000-3000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-033",
@@ -640,16 +641,17 @@
         "FEAT-012",
         "FEAT-015"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:55:11.517814Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "automated-deliverables",
       "enriched_by_llm": true,
       "phase": "Phase 3",
       "difficulty": "hard",
       "estimated_loc": "3000-4000",
-      "completion_method": "batch-7-implementation"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-074",
@@ -659,9 +661,9 @@
       "dependencies": [
         "FEAT-001"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Platform",
@@ -675,8 +677,8 @@
           "purpose": "X11 protocol bindings"
         }
       ],
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-075",
@@ -686,9 +688,9 @@
       "dependencies": [
         "FEAT-001"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Platform",
@@ -702,8 +704,8 @@
           "purpose": "Wayland protocol client"
         }
       ],
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-076",
@@ -713,9 +715,9 @@
       "dependencies": [
         "FEAT-001"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Platform",
@@ -729,8 +731,8 @@
           "purpose": "Win32 API bindings"
         }
       ],
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-077",
@@ -740,9 +742,9 @@
       "dependencies": [
         "FEAT-001"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Platform",
@@ -762,8 +764,8 @@
           "purpose": "Objective-C runtime"
         }
       ],
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-078",
@@ -774,9 +776,9 @@
         "FEAT-002",
         "FEAT-004"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Security",
@@ -788,8 +790,8 @@
         "IPC communication works correctly",
         "Process recycling after N navigations"
       ],
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-079",
@@ -799,9 +801,9 @@
       "dependencies": [
         "FEAT-004"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Architecture",
@@ -815,8 +817,8 @@
           "purpose": "Async runtime"
         }
       ],
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-080",
@@ -827,16 +829,16 @@
         "FEAT-004",
         "FEAT-079"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Architecture",
       "difficulty": "medium",
       "estimated_loc": "1500-2000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-081",
@@ -847,16 +849,16 @@
         "FEAT-004",
         "FEAT-028"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Security",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-082",
@@ -867,9 +869,9 @@
         "FEAT-003",
         "FEAT-028"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:45:00.000000Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Security",
@@ -883,8 +885,8 @@
           "purpose": "URL parsing and validation"
         }
       ],
-      "completion_method": "reconciliation",
-      "reconciliation_notes": "Detected as already implemented via /orch-reconcile-queue. Location: components/security_manager/src/lib.rs (URL validation, XSS protection, dangerous scheme filtering)"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-083",
@@ -894,16 +896,16 @@
       "dependencies": [
         "FEAT-031"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "UI",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-084",
@@ -914,15 +916,16 @@
         "FEAT-007",
         "FEAT-001"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:55:11.517814Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Phase 4",
       "difficulty": "hard",
       "estimated_loc": "1500-2000",
-      "completion_method": "batch-7-implementation"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-085",
@@ -933,15 +936,16 @@
         "FEAT-001",
         "FEAT-012"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:55:11.517814Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Phase 4",
       "difficulty": "hard",
       "estimated_loc": "2000-2500",
-      "completion_method": "batch-7-implementation"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-086",
@@ -952,15 +956,16 @@
         "FEAT-001",
         "FEAT-011"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:55:11.517814Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Phase 4",
       "difficulty": "hard",
       "estimated_loc": "3000-4000",
-      "completion_method": "batch-7-implementation"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-087",
@@ -971,16 +976,16 @@
         "FEAT-010",
         "FEAT-028"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Phase 4",
       "difficulty": "hard",
       "estimated_loc": "3000-4000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-088",
@@ -992,16 +997,16 @@
         "FEAT-017",
         "FEAT-018"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Phase 4",
       "difficulty": "hard",
       "estimated_loc": "4000-6000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-089",
@@ -1009,9 +1014,9 @@
       "description": "Persistent storage for bookmarks, history, and settings using SQLite",
       "feature_id": "FEAT-089",
       "dependencies": [],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Storage",
@@ -1031,8 +1036,8 @@
           "purpose": "Platform-specific directories"
         }
       ],
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-090",
@@ -1042,16 +1047,16 @@
       "dependencies": [
         "FEAT-015"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Extensions",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-091",
@@ -1062,16 +1067,16 @@
         "FEAT-015",
         "FEAT-008"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Extensions",
       "difficulty": "medium",
       "estimated_loc": "800-1200",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-092",
@@ -1082,16 +1087,16 @@
         "FEAT-015",
         "FEAT-002"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Extensions",
       "difficulty": "medium",
       "estimated_loc": "1200-1800",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-093",
@@ -1102,16 +1107,16 @@
         "FEAT-015",
         "FEAT-001"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Extensions",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-094",
@@ -1122,16 +1127,16 @@
         "FEAT-015",
         "FEAT-017"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Extensions",
       "difficulty": "medium",
       "estimated_loc": "1000-1500",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-095",
@@ -1139,9 +1144,9 @@
       "description": "Core trait for component interface with initialize, shutdown, handle_message, health_check, get_metrics",
       "feature_id": "FEAT-095",
       "dependencies": [],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Architecture",
@@ -1155,8 +1160,8 @@
           "purpose": "Async trait support"
         }
       ],
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-096",
@@ -1167,16 +1172,16 @@
         "FEAT-002",
         "FEAT-029"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Performance",
       "difficulty": "medium",
       "estimated_loc": "800-1200",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-097",
@@ -1187,16 +1192,16 @@
         "FEAT-002",
         "FEAT-018"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Privacy",
       "difficulty": "medium",
       "estimated_loc": "1500-2000",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-098",
@@ -1207,16 +1212,16 @@
         "FEAT-011",
         "FEAT-010"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Privacy",
       "difficulty": "easy",
       "estimated_loc": "200-300",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-099",
@@ -1227,16 +1232,16 @@
         "FEAT-011",
         "FEAT-010"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Privacy",
       "difficulty": "medium",
       "estimated_loc": "500-800",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     },
     {
       "id": "TASK-FEAT-100",
@@ -1247,86 +1252,31 @@
         "FEAT-011",
         "FEAT-010"
       ],
-      "status": "completed",
+      "status": "incomplete",
       "started_at": null,
-      "completed_at": "2025-11-23T19:48:16.835902Z",
+      "completed_at": null,
       "verification_result": null,
       "extraction_method": "llm",
       "phase": "Network",
       "difficulty": "easy",
       "estimated_loc": "200-400",
-      "completion_method": "batch-implementation",
-      "reconciliation_notes": "Implemented during Phase 4 parallel development batches"
+      "reset_timestamp": "2025-11-24T00:00:00.000000Z",
+      "reset_reason": "Reset via /orch-reconcile-queue --reset for re-verification"
     }
   ],
-  "completed_order": [
-    "TASK-FEAT-001",
-    "TASK-FEAT-002",
-    "TASK-FEAT-003",
-    "TASK-FEAT-004",
-    "TASK-FEAT-005",
-    "TASK-FEAT-006",
-    "TASK-FEAT-007",
-    "TASK-FEAT-008",
-    "TASK-FEAT-009",
-    "TASK-FEAT-010",
-    "TASK-FEAT-016",
-    "TASK-FEAT-017",
-    "TASK-FEAT-018",
-    "TASK-FEAT-019",
-    "TASK-FEAT-028",
-    "TASK-FEAT-031",
-    "TASK-FEAT-082",
-    "TASK-FEAT-011",
-    "TASK-FEAT-012",
-    "TASK-FEAT-013",
-    "TASK-FEAT-014",
-    "TASK-FEAT-015",
-    "TASK-FEAT-021",
-    "TASK-FEAT-022",
-    "TASK-FEAT-023",
-    "TASK-FEAT-024",
-    "TASK-FEAT-025",
-    "TASK-FEAT-026",
-    "TASK-FEAT-027",
-    "TASK-FEAT-029",
-    "TASK-FEAT-030",
-    "TASK-FEAT-032",
-    "TASK-FEAT-074",
-    "TASK-FEAT-075",
-    "TASK-FEAT-076",
-    "TASK-FEAT-077",
-    "TASK-FEAT-078",
-    "TASK-FEAT-079",
-    "TASK-FEAT-080",
-    "TASK-FEAT-081",
-    "TASK-FEAT-083",
-    "TASK-FEAT-087",
-    "TASK-FEAT-088",
-    "TASK-FEAT-089",
-    "TASK-FEAT-090",
-    "TASK-FEAT-091",
-    "TASK-FEAT-092",
-    "TASK-FEAT-093",
-    "TASK-FEAT-094",
-    "TASK-FEAT-095",
-    "TASK-FEAT-096",
-    "TASK-FEAT-097",
-    "TASK-FEAT-098",
-    "TASK-FEAT-099",
-    "TASK-FEAT-100",
-    "TASK-FEAT-020",
-    "TASK-FEAT-033",
-    "TASK-FEAT-084",
-    "TASK-FEAT-085",
-    "TASK-FEAT-086"
-  ],
-  "last_updated": "2025-11-23T19:55:11.517871",
+  "completed_order": [],
+  "last_updated": "2025-11-24T00:00:00.000000Z",
   "initialized": true,
   "spec_file": "/home/dealy/Develop/Corten/Components/BrowserShell/specifications/browser-shell-specification.md",
   "spec_files": [
     "/home/dealy/Develop/Corten/Components/BrowserShell/specifications/browser-shell-specification.md"
   ],
   "total_features": 60,
-  "detected_language": "rust"
+  "detected_language": "rust",
+  "reset_info": {
+    "timestamp": "2025-11-24T00:00:00.000000Z",
+    "tasks_reset": 60,
+    "method": "/orch-reconcile-queue --reset",
+    "reason": "Full re-verification requested"
+  }
 }
