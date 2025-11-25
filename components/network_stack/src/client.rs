@@ -33,6 +33,8 @@ pub struct NetworkClientConfig {
     pub user_agent: String,
     /// Enable HTTP/2.
     pub http2_enabled: bool,
+    /// Enable HTTP/3 (QUIC). Note: Requires underlying client support.
+    pub http3_enabled: bool,
     /// Enable gzip decompression.
     pub gzip_enabled: bool,
     /// Enable brotli decompression.
@@ -51,6 +53,7 @@ impl Default for NetworkClientConfig {
             pool_max_idle_per_host: 10,
             user_agent: format!("CortenBrowser/{}", env!("CARGO_PKG_VERSION")),
             http2_enabled: true,
+            http3_enabled: false, // Disabled by default until stable
             gzip_enabled: true,
             brotli_enabled: true,
             max_response_size: 100 * 1024 * 1024, // 100MB
@@ -298,6 +301,13 @@ impl HttpClientBuilder {
         self
     }
 
+    /// Enable or disable HTTP/3 (QUIC).
+    /// Note: Requires underlying HTTP client support. May not be fully stable.
+    pub fn http3(mut self, enabled: bool) -> Self {
+        self.config.http3_enabled = enabled;
+        self
+    }
+
     /// Enable or disable gzip decompression.
     pub fn gzip(mut self, enabled: bool) -> Self {
         self.config.gzip_enabled = enabled;
@@ -473,6 +483,8 @@ mod tests {
         assert_eq!(config.default_timeout, Duration::from_secs(30));
         assert_eq!(config.max_redirects, 10);
         assert!(!config.accept_invalid_certs);
+        assert!(config.http2_enabled);
+        assert!(!config.http3_enabled); // HTTP/3 disabled by default
         assert!(config.gzip_enabled);
         assert!(config.brotli_enabled);
     }
@@ -491,6 +503,27 @@ mod tests {
         assert_eq!(client.config().max_redirects, 5);
         assert_eq!(client.config().user_agent, "TestAgent/1.0");
         assert!(!client.config().gzip_enabled);
+    }
+
+    #[test]
+    fn test_http_client_builder_with_http3() {
+        let client = HttpClientBuilder::new()
+            .http2(true)
+            .http3(true)
+            .build()
+            .unwrap();
+
+        assert!(client.config().http2_enabled);
+        assert!(client.config().http3_enabled);
+    }
+
+    #[test]
+    fn test_http3_disabled_by_default() {
+        let client = HttpClientBuilder::new()
+            .build()
+            .unwrap();
+
+        assert!(!client.config().http3_enabled);
     }
 
     #[test]

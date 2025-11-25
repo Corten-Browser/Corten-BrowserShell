@@ -399,6 +399,100 @@ impl SettingsUi {
         if ui.button("🗑 Clear Browsing Data...").clicked() {
             // TODO: Show clear browsing data dialog
         }
+
+        ui.add_space(20.0);
+        ui.separator();
+        ui.add_space(10.0);
+
+        // Ad Blocker section
+        ui.heading("🛡 Ad Blocker");
+        ui.add_space(10.0);
+
+        // Enable ad blocker
+        let mut ad_blocker_enabled = self.get_bool("privacy.ad_blocker_enabled", true);
+        if ui.checkbox(&mut ad_blocker_enabled, "Enable ad blocker").changed() {
+            self.update_setting("privacy.ad_blocker_enabled".to_string(), SettingValue::Boolean(ad_blocker_enabled));
+        }
+        ui.label("Block ads, trackers, and malicious content");
+        ui.add_space(10.0);
+
+        if ad_blocker_enabled {
+            // Block malware domains
+            let mut block_malware = self.get_bool("privacy.block_malware_domains", true);
+            if ui.checkbox(&mut block_malware, "Block malware domains").changed() {
+                self.update_setting("privacy.block_malware_domains".to_string(), SettingValue::Boolean(block_malware));
+            }
+            ui.label("Protect against known malicious websites");
+            ui.add_space(10.0);
+
+            // Block tracking scripts
+            let mut block_tracking = self.get_bool("privacy.block_tracking_scripts", true);
+            if ui.checkbox(&mut block_tracking, "Block tracking scripts").changed() {
+                self.update_setting("privacy.block_tracking_scripts".to_string(), SettingValue::Boolean(block_tracking));
+            }
+            ui.label("Prevent websites from tracking your activity");
+            ui.add_space(10.0);
+
+            // Hide elements
+            let mut hide_elements = self.get_bool("privacy.hide_blocked_elements", true);
+            if ui.checkbox(&mut hide_elements, "Hide blocked elements").changed() {
+                self.update_setting("privacy.hide_blocked_elements".to_string(), SettingValue::Boolean(hide_elements));
+            }
+            ui.label("Remove blocked ad elements from pages");
+            ui.add_space(10.0);
+
+            // Aggressive blocking
+            let mut aggressive = self.get_bool("privacy.aggressive_blocking", false);
+            if ui.checkbox(&mut aggressive, "Aggressive blocking mode").changed() {
+                self.update_setting("privacy.aggressive_blocking".to_string(), SettingValue::Boolean(aggressive));
+            }
+            ui.label("Block more aggressively (may break some websites)");
+            ui.add_space(10.0);
+
+            // Filter list selection
+            ui.label(egui::RichText::new("Filter Lists").strong());
+            let mut filter_lists = self.get_string("privacy.filter_lists", "easylist");
+            ui.horizontal(|ui| {
+                let mut use_easylist = filter_lists.contains("easylist");
+                if ui.checkbox(&mut use_easylist, "EasyList").changed() {
+                    if use_easylist {
+                        filter_lists.push_str(",easylist");
+                    } else {
+                        filter_lists = filter_lists.replace("easylist", "").replace(",,", ",");
+                    }
+                    self.update_setting("privacy.filter_lists".to_string(), SettingValue::String(filter_lists.clone()));
+                }
+
+                let mut use_easyprivacy = filter_lists.contains("easyprivacy");
+                if ui.checkbox(&mut use_easyprivacy, "EasyPrivacy").changed() {
+                    if use_easyprivacy {
+                        filter_lists.push_str(",easyprivacy");
+                    } else {
+                        filter_lists = filter_lists.replace("easyprivacy", "").replace(",,", ",");
+                    }
+                    self.update_setting("privacy.filter_lists".to_string(), SettingValue::String(filter_lists.clone()));
+                }
+
+                let mut use_fanboy = filter_lists.contains("fanboy");
+                if ui.checkbox(&mut use_fanboy, "Fanboy Annoyances").changed() {
+                    if use_fanboy {
+                        filter_lists.push_str(",fanboy");
+                    } else {
+                        filter_lists = filter_lists.replace("fanboy", "").replace(",,", ",");
+                    }
+                    self.update_setting("privacy.filter_lists".to_string(), SettingValue::String(filter_lists.clone()));
+                }
+            });
+            ui.label("Choose which filter lists to use for blocking");
+            ui.add_space(20.0);
+
+            // Whitelist management
+            ui.separator();
+            if ui.button("📋 Manage Whitelist...").clicked() {
+                // TODO: Show whitelist management dialog
+            }
+            ui.label("Manage sites that bypass ad blocking");
+        }
     }
 
     /// Render Security settings tab

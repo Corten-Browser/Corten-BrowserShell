@@ -24,13 +24,18 @@
 
 pub mod api;
 mod browser_action;
+mod content_script_injector;
 mod context_menu;
 mod manifest;
 mod messaging;
 mod permissions;
 mod types;
+mod webrequest;
 
 pub use browser_action::{BrowserAction, BrowserActionApi, BrowserActionState, PopupConfig};
+pub use content_script_injector::{
+    ContentScriptInjector, DocumentState, InjectionContext, InjectionScript, InjectionScriptType,
+};
 pub use context_menu::{ContextMenuApi, ContextMenuItem, ContextMenuItemType, MenuContext};
 pub use manifest::{ExtensionManifest, ManifestParseError};
 pub use messaging::{ExtensionMessage, MessageChannel, MessageSender, MessagingApi};
@@ -38,6 +43,10 @@ pub use permissions::{Permission, PermissionRequest, PermissionSet};
 pub use types::{
     ContentScript, ContentScriptMatch, Extension, ExtensionError, ExtensionHost, ExtensionId,
     ExtensionState, Result,
+};
+pub use webrequest::{
+    RequestAction, RequestDetails, RequestFilter, ResourceType as WebRequestResourceType,
+    WebRequestApi, WebRequestEvent, WebRequestListener,
 };
 
 use std::collections::HashMap;
@@ -57,6 +66,10 @@ pub struct ExtensionManager {
     context_menu_api: Arc<RwLock<ContextMenuApi>>,
     /// Messaging API
     messaging_api: Arc<RwLock<MessagingApi>>,
+    /// Content script injector
+    content_script_injector: Arc<RwLock<ContentScriptInjector>>,
+    /// WebRequest API
+    webrequest_api: Arc<RwLock<WebRequestApi>>,
 }
 
 impl ExtensionManager {
@@ -67,6 +80,8 @@ impl ExtensionManager {
             browser_action_api: Arc::new(RwLock::new(BrowserActionApi::new())),
             context_menu_api: Arc::new(RwLock::new(ContextMenuApi::new())),
             messaging_api: Arc::new(RwLock::new(MessagingApi::new())),
+            content_script_injector: Arc::new(RwLock::new(ContentScriptInjector::new())),
+            webrequest_api: Arc::new(RwLock::new(WebRequestApi::new())),
         }
     }
 
@@ -90,6 +105,16 @@ impl ExtensionManager {
     /// Get the messaging API
     pub fn messaging_api(&self) -> Arc<RwLock<MessagingApi>> {
         Arc::clone(&self.messaging_api)
+    }
+
+    /// Get the content script injector
+    pub fn content_script_injector(&self) -> Arc<RwLock<ContentScriptInjector>> {
+        Arc::clone(&self.content_script_injector)
+    }
+
+    /// Get the WebRequest API
+    pub fn webrequest_api(&self) -> Arc<RwLock<WebRequestApi>> {
+        Arc::clone(&self.webrequest_api)
     }
 
     /// Get all registered extension IDs
@@ -119,6 +144,14 @@ impl ExtensionManager {
             cm_api.add_item(id, item.clone());
         }
 
+        // Register content scripts
+        if !extension.content_scripts.is_empty() {
+            let cs_injector = self.content_script_injector.write().await;
+            cs_injector
+                .register_extension(id, extension.content_scripts.clone())
+                .await?;
+        }
+
         Ok(())
     }
 
@@ -138,6 +171,14 @@ impl ExtensionManager {
         // Unregister context menu items
         let mut cm_api = self.context_menu_api.write().await;
         cm_api.remove_all_for_extension(id);
+
+        // Unregister content scripts
+        let cs_injector = self.content_script_injector.write().await;
+        cs_injector.unregister_extension(id).await?;
+
+        // Unregister WebRequest listeners
+        let wr_api = self.webrequest_api.write().await;
+        wr_api.remove_extension_listeners(id).await?;
 
         Ok(())
     }

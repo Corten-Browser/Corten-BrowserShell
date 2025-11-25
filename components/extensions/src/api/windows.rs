@@ -218,6 +218,15 @@ pub struct WindowsApi {
     /// Callback for getting all windows
     get_all_callback: Option<Box<dyn Fn(GetWindowInfo) -> Vec<WindowInfo> + Send + Sync>>,
 
+    /// Callback for creating windows
+    create_callback: Option<Box<dyn Fn(Option<CreateWindowOptions>) -> Result<WindowInfo, WindowsApiError> + Send + Sync>>,
+
+    /// Callback for updating windows
+    update_callback: Option<Box<dyn Fn(i64, UpdateWindowOptions) -> Result<WindowInfo, WindowsApiError> + Send + Sync>>,
+
+    /// Callback for removing windows
+    remove_callback: Option<Box<dyn Fn(i64) -> Result<(), WindowsApiError> + Send + Sync>>,
+
     /// ID of the current window (for CURRENT_WINDOW constant)
     current_window_id: Option<u64>,
 
@@ -236,6 +245,9 @@ impl WindowsApi {
     pub fn new() -> Self {
         Self {
             get_all_callback: None,
+            create_callback: None,
+            update_callback: None,
+            remove_callback: None,
             current_window_id: None,
             last_focused_window_id: None,
         }
@@ -247,6 +259,30 @@ impl WindowsApi {
         callback: Box<dyn Fn(GetWindowInfo) -> Vec<WindowInfo> + Send + Sync>,
     ) {
         self.get_all_callback = Some(callback);
+    }
+
+    /// Set the callback for creating windows
+    pub fn set_create_callback(
+        &mut self,
+        callback: Box<dyn Fn(Option<CreateWindowOptions>) -> Result<WindowInfo, WindowsApiError> + Send + Sync>,
+    ) {
+        self.create_callback = Some(callback);
+    }
+
+    /// Set the callback for updating windows
+    pub fn set_update_callback(
+        &mut self,
+        callback: Box<dyn Fn(i64, UpdateWindowOptions) -> Result<WindowInfo, WindowsApiError> + Send + Sync>,
+    ) {
+        self.update_callback = Some(callback);
+    }
+
+    /// Set the callback for removing windows
+    pub fn set_remove_callback(
+        &mut self,
+        callback: Box<dyn Fn(i64) -> Result<(), WindowsApiError> + Send + Sync>,
+    ) {
+        self.remove_callback = Some(callback);
     }
 
     /// Set the current window ID
@@ -351,10 +387,14 @@ impl WindowsApi {
     /// # Returns
     ///
     /// Created window information
-    pub fn create(&self, _options: Option<CreateWindowOptions>) -> Result<WindowInfo, WindowsApiError> {
-        Err(WindowsApiError::OperationFailed(
-            "Window creation requires integration with WindowManager".to_string(),
-        ))
+    pub fn create(&self, options: Option<CreateWindowOptions>) -> Result<WindowInfo, WindowsApiError> {
+        if let Some(ref callback) = self.create_callback {
+            callback(options)
+        } else {
+            Err(WindowsApiError::OperationFailed(
+                "Window creation requires integration with WindowManager".to_string(),
+            ))
+        }
     }
 
     /// Update an existing window
@@ -369,12 +409,16 @@ impl WindowsApi {
     /// Updated window information
     pub fn update(
         &self,
-        _window_id: i64,
-        _options: UpdateWindowOptions,
+        window_id: i64,
+        options: UpdateWindowOptions,
     ) -> Result<WindowInfo, WindowsApiError> {
-        Err(WindowsApiError::OperationFailed(
-            "Window update requires integration with WindowManager".to_string(),
-        ))
+        if let Some(ref callback) = self.update_callback {
+            callback(window_id, options)
+        } else {
+            Err(WindowsApiError::OperationFailed(
+                "Window update requires integration with WindowManager".to_string(),
+            ))
+        }
     }
 
     /// Remove (close) a window
@@ -386,10 +430,14 @@ impl WindowsApi {
     /// # Returns
     ///
     /// Success or error
-    pub fn remove(&self, _window_id: i64) -> Result<(), WindowsApiError> {
-        Err(WindowsApiError::OperationFailed(
-            "Window removal requires integration with WindowManager".to_string(),
-        ))
+    pub fn remove(&self, window_id: i64) -> Result<(), WindowsApiError> {
+        if let Some(ref callback) = self.remove_callback {
+            callback(window_id)
+        } else {
+            Err(WindowsApiError::OperationFailed(
+                "Window removal requires integration with WindowManager".to_string(),
+            ))
+        }
     }
 
     /// Resolve special window ID values
@@ -540,5 +588,95 @@ mod tests {
         let json = serde_json::to_string(&options).unwrap();
         assert!(json.contains("url"));
         assert!(json.contains("width"));
+    }
+
+    #[test]
+    fn test_create_with_callback() {
+        let mut api = WindowsApi::new();
+        api.set_create_callback(Box::new(|opts| {
+            Ok(WindowInfo {
+                id: 42,
+                focused: true,
+                top: Some(0),
+                left: Some(0),
+                width: opts.as_ref().and_then(|o| o.width),
+                height: opts.as_ref().and_then(|o| o.height),
+                tabs: None,
+                incognito: false,
+                window_type: WindowType::Normal,
+                state: WindowState::Normal,
+                always_on_top: false,
+                session_id: None,
+            })
+        }));
+
+        let options = CreateWindowOptions {
+            width: Some(800),
+            height: Some(600),
+            ..Default::default()
+        };
+        let result = api.create(Some(options));
+        assert!(result.is_ok());
+        let window = result.unwrap();
+        assert_eq!(window.id, 42);
+        assert_eq!(window.width, Some(800));
+        assert_eq!(window.height, Some(600));
+    }
+
+    #[test]
+    fn test_update_with_callback() {
+        let mut api = WindowsApi::new();
+        api.set_update_callback(Box::new(|window_id, opts| {
+            Ok(WindowInfo {
+                id: window_id as u64,
+                focused: opts.focused.unwrap_or(false),
+                top: opts.top,
+                left: opts.left,
+                width: opts.width,
+                height: opts.height,
+                tabs: None,
+                incognito: false,
+                window_type: WindowType::Normal,
+                state: opts.state.unwrap_or(WindowState::Normal),
+                always_on_top: false,
+                session_id: None,
+            })
+        }));
+
+        let options = UpdateWindowOptions {
+            width: Some(1024),
+            height: Some(768),
+            focused: Some(true),
+            ..Default::default()
+        };
+        let result = api.update(1, options);
+        assert!(result.is_ok());
+        let window = result.unwrap();
+        assert_eq!(window.id, 1);
+        assert_eq!(window.width, Some(1024));
+        assert!(window.focused);
+    }
+
+    #[test]
+    fn test_remove_with_callback() {
+        let mut api = WindowsApi::new();
+        api.set_remove_callback(Box::new(|_window_id| Ok(())));
+
+        let result = api.remove(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_operations_without_callbacks() {
+        let api = WindowsApi::new();
+
+        let create_result = api.create(None);
+        assert!(create_result.is_err());
+
+        let update_result = api.update(1, UpdateWindowOptions::default());
+        assert!(update_result.is_err());
+
+        let remove_result = api.remove(1);
+        assert!(remove_result.is_err());
     }
 }

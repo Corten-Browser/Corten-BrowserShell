@@ -12,6 +12,7 @@
 //! - **Clipboard**: Cross-platform clipboard support for text, HTML, and images
 //! - **File Associations**: Cross-platform file type and protocol registration
 //! - **Drag and Drop**: Cross-platform drag and drop support for files, text, HTML, images, and URLs
+//! - **Protocol Handlers**: Cross-platform URL protocol scheme registration and handling
 //!
 //! # Platform Support
 //!
@@ -48,6 +49,7 @@ pub mod file_associations;
 mod handles;
 pub mod notification;
 pub mod platform;
+pub mod protocol_handlers;
 mod traits;
 
 // Re-export handle types
@@ -101,4 +103,10 @@ pub use drag_drop::{
     drag_drop_supported, DragData, DragDropError, DragDropEvent, DragDropManager, DragDropResult,
     DragFormat, DragSource, DragState, DropEffect, DropIndicator, DropIndicatorStyle, DropTarget,
     DropTargetId, FileDropTarget, Point, TextDragSource, UrlDragSource,
+};
+
+// Re-export protocol handler types at top level for convenience
+pub use protocol_handlers::{
+    protocol_handling_supported, Protocol, ProtocolConfig, ProtocolError, ProtocolHandler,
+    ProtocolResult, ProtocolStatus, ProtocolUrl, SystemProtocolHandler,
 };

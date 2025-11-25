@@ -69,14 +69,18 @@
 //! let job_id = print_manager.create_job("Document.pdf".to_string(), 10);
 //! ```
 
+pub mod crash_recovery;
 pub mod devtools;
 pub mod menu;
 pub mod print;
 pub mod settings_ui;
+pub mod tab_drag_ui;
 pub mod theme;
 
+use crash_recovery::{ClosedTabInfo, CrashRecoveryUi};
 use shared_types::{ComponentError, DownloadId, KeyboardShortcut, TabId};
 use std::collections::{HashMap, HashSet};
+use tab_drag_ui::{TabDragState, TabDragVisuals, TabOverflowHandler};
 
 // Re-export theme types for convenience
 pub use theme::{Theme, ThemeManager, ThemeMode};
@@ -230,6 +234,21 @@ pub struct UiChrome {
 
     /// Settings UI panel
     settings_ui: SettingsUi,
+
+    /// Tab drag and drop state
+    tab_drag_state: TabDragState,
+
+    /// Tab drag visual configuration
+    tab_drag_visuals: TabDragVisuals,
+
+    /// Tab overflow handler for scrolling
+    tab_overflow: TabOverflowHandler,
+
+    /// Blocked content count from ad blocker (for status bar display)
+    blocked_content_count: usize,
+
+    /// Crash recovery UI (session restore dialog and recently closed tabs)
+    crash_recovery: CrashRecoveryUi,
 }
 
 impl UiChrome {
@@ -257,6 +276,11 @@ impl UiChrome {
             bookmarks: HashSet::new(),
             menu_bar: MenuBar::new(),
             settings_ui: SettingsUi::new(),
+            tab_drag_state: TabDragState::new(),
+            tab_drag_visuals: TabDragVisuals::default(),
+            tab_overflow: TabOverflowHandler::new(),
+            blocked_content_count: 0,
+            crash_recovery: CrashRecoveryUi::new(),
         }
     }
 
@@ -455,6 +479,21 @@ impl UiChrome {
             .ok_or_else(|| {
                 ComponentError::ResourceNotFound(format!("Tab {:?} not found", tab_id))
             })?;
+
+        // Get tab info before removing for recently closed tracking
+        if let Some(tab) = self.tabs.get(&tab_id) {
+            let closed_tab = ClosedTabInfo {
+                id: tab_id,
+                title: tab.title.clone(),
+                url: self.address_bar_text.clone(), // In real usage, should track per-tab URLs
+                closed_at: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs(),
+            };
+
+            self.crash_recovery.add_closed_tab(closed_tab);
+        }
 
         // Remove from tabs map
         self.tabs.remove(&tab_id);
@@ -705,6 +744,98 @@ impl UiChrome {
         self.bookmarks.contains(url)
     }
 
+    /// Set the blocked content count from ad blocker
+    pub fn set_blocked_content_count(&mut self, count: usize) {
+        self.blocked_content_count = count;
+    }
+
+    /// Get the current blocked content count
+    pub fn get_blocked_content_count(&self) -> usize {
+        self.blocked_content_count
+    }
+
+    /// Show the session restore dialog (call this at startup after crash detection)
+    pub fn show_crash_recovery_dialog(&mut self) {
+        self.crash_recovery.show_restore_dialog();
+    }
+
+    /// Check if user chose to restore session
+    pub fn should_restore_session(&self) -> bool {
+        self.crash_recovery.should_restore_session()
+    }
+
+    /// Check if restore dialog was dismissed
+    pub fn restore_dialog_dismissed(&self) -> bool {
+        self.crash_recovery.restore_dialog_dismissed()
+    }
+
+    /// Reset crash recovery dialog state after handling the choice
+    pub fn reset_crash_recovery_dialog(&mut self) {
+        self.crash_recovery.reset_restore_dialog();
+    }
+
+    /// Toggle the recently closed tabs menu
+    pub fn toggle_recently_closed_tabs(&mut self) {
+        self.crash_recovery.toggle_recently_closed_menu();
+    }
+
+    /// Get count of recently closed tabs
+    pub fn recently_closed_count(&self) -> usize {
+        self.crash_recovery.closed_tab_count()
+    }
+
+    /// Reorder tabs based on drag-and-drop operation
+    ///
+    /// Moves a tab from `from_index` to `to_index` in the tab order
+    ///
+    /// # Errors
+    ///
+    /// Returns `ComponentError::InvalidState` if indices are out of range
+    pub fn reorder_tab(&mut self, from_index: usize, to_index: usize) -> Result<(), ComponentError> {
+        if from_index >= self.tab_order.len() {
+            return Err(ComponentError::InvalidState(format!(
+                "Source index {} is out of range (have {} tabs)",
+                from_index,
+                self.tab_order.len()
+            )));
+        }
+
+        if to_index > self.tab_order.len() {
+            return Err(ComponentError::InvalidState(format!(
+                "Target index {} is out of range (have {} tabs)",
+                to_index,
+                self.tab_order.len()
+            )));
+        }
+
+        if from_index == to_index {
+            return Ok(()); // No-op
+        }
+
+        // Remove tab from original position
+        let tab_id = self.tab_order.remove(from_index);
+
+        // Insert at new position (adjust for removal)
+        let insert_index = if to_index > from_index {
+            to_index - 1
+        } else {
+            to_index
+        };
+
+        self.tab_order.insert(insert_index, tab_id);
+
+        // Update active index if needed
+        if self.active_tab_index == from_index {
+            self.active_tab_index = insert_index;
+        } else if from_index < self.active_tab_index && insert_index >= self.active_tab_index {
+            self.active_tab_index -= 1;
+        } else if from_index > self.active_tab_index && insert_index <= self.active_tab_index {
+            self.active_tab_index += 1;
+        }
+
+        Ok(())
+    }
+
     /// Load settings from a settings manager
     ///
     /// This should be called when initializing the UI or when settings need to be refreshed
@@ -844,6 +975,9 @@ impl UiChrome {
             }
         });
 
+        // Crash recovery dialog (shows modal dialog if crash detected)
+        self.crash_recovery.render_restore_dialog(ctx);
+
         // Top toolbar with navigation buttons
         egui::TopBottomPanel::top("toolbar").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -881,66 +1015,25 @@ impl UiChrome {
             });
         });
 
-        // Tab bar with close buttons
+        // Tab bar with drag-and-drop support
         egui::TopBottomPanel::top("tabs").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                let mut tab_to_close: Option<TabId> = None;
-                let mut tab_for_context_menu: Option<TabId> = None;
-
-                // Render tabs in order
-                for (index, &tab_id) in self.tab_order.iter().enumerate() {
-                    if let Some(tab) = self.tabs.get(&tab_id) {
-                        let is_active = index == self.active_tab_index;
-
-                        // Show loading indicator if tab is loading
-                        let label = if tab.loading {
-                            format!("⟳ {}", tab.title)
-                        } else {
-                            tab.title.clone()
-                        };
-
-                        // Tab with hover effect
-                        let tab_response = ui.selectable_label(is_active, &label);
-
-                        if tab_response.clicked() {
-                            self.active_tab_index = index;
-                        }
-
-                        // Middle-click to close
-                        if tab_response.middle_clicked() {
-                            tab_to_close = Some(tab_id);
-                        }
-
-                        // Right-click context menu (deferred to avoid borrow issues)
-                        if tab_response.secondary_clicked() {
-                            tab_for_context_menu = Some(tab_id);
-                        }
-
-                        // Close button (X)
-                        if ui.small_button("✕").clicked() {
-                            tab_to_close = Some(tab_id);
-                        }
-                    }
-                }
-
-                // Process deferred actions
-                if let Some(tab_id) = tab_to_close {
-                    let _ = self.close_tab(tab_id);
-                }
-
-                if let Some(tab_id) = tab_for_context_menu {
-                    self.show_tab_context_menu(tab_id);
-                }
-
-                // New tab button
-                if ui.button("+").clicked() {
-                    self.add_tab("New Tab".to_string());
-                }
+                let _ = self.render_tab_bar(ui);
             });
         });
 
         // Render context menus
         self.render_context_menu(ctx);
+
+        // Recently closed tabs menu (if visible)
+        egui::CentralPanel::default().show(ctx, |ui| {
+            if let Some(tab_id) = self.crash_recovery.render_recently_closed_menu(ui) {
+                // User clicked to restore a tab - would need to restore from session manager
+                // For now, just remove from recently closed list
+                self.crash_recovery.remove_closed_tab(tab_id);
+                // TODO: Actually restore the tab with its URL and history
+            }
+        });
 
         // Left side panels (Settings, History, Downloads)
         if self.settings_panel_visible {
@@ -1151,6 +1244,13 @@ impl UiChrome {
                     if self.download_count > 0 {
                         ui.label(format!("⬇ {}", self.download_count));
                     }
+
+                    // Blocked content count badge from ad blocker
+                    if self.blocked_content_count > 0 {
+                        ui.separator();
+                        let blocked_text = format!("🛡 {} blocked", self.blocked_content_count);
+                        ui.label(egui::RichText::new(blocked_text).color(egui::Color32::from_rgb(0, 150, 0)));
+                    }
                 });
             });
         });
@@ -1231,6 +1331,154 @@ impl UiChrome {
                 self.toggle_settings_panel();
             }
         });
+    }
+
+    /// Render the tab bar with drag-and-drop support
+    fn render_tab_bar(&mut self, ui: &mut egui::Ui) -> Result<(), ComponentError> {
+        use tab_drag_ui::{render_drop_indicator, render_ghost_tab};
+
+        let mut tab_to_close: Option<TabId> = None;
+        let mut tab_for_context_menu: Option<TabId> = None;
+        let mut tab_rects: Vec<(TabId, egui::Rect)> = Vec::new();
+
+        // Track total tab width for overflow handling
+        let mut total_tab_width = 0.0f32;
+        let available_width = ui.available_width() - 40.0; // Reserve space for new tab button
+
+        // Apply scroll offset if overflowing
+        if self.tab_overflow.is_overflowing() {
+            ui.add_space(-self.tab_overflow.offset());
+        }
+
+        // Render tabs in order
+        for (index, &tab_id) in self.tab_order.iter().enumerate() {
+            if let Some(tab) = self.tabs.get(&tab_id) {
+                let is_active = index == self.active_tab_index;
+                let is_being_dragged = self.tab_drag_state.dragging_tab == Some(tab_id);
+
+                // Show loading indicator if tab is loading
+                let label = if tab.loading {
+                    format!("⟳ {}", tab.title)
+                } else {
+                    tab.title.clone()
+                };
+
+                // Dim the tab if it's being dragged
+                let alpha_multiplier = if is_being_dragged { 0.3 } else { 1.0 };
+
+                ui.scope(|ui| {
+                    if is_being_dragged {
+                        ui.style_mut().visuals.widgets.inactive.bg_fill =
+                            ui.style().visuals.widgets.inactive.bg_fill.linear_multiply(alpha_multiplier);
+                    }
+
+                    // Tab with hover effect
+                    let tab_response = ui.selectable_label(is_active, &label);
+                    let tab_rect = tab_response.rect;
+
+                    // Store rect for drop target calculation
+                    tab_rects.push((tab_id, tab_rect));
+                    total_tab_width += tab_rect.width();
+
+                    // Handle drag initiation
+                    if tab_response.drag_started() {
+                        self.tab_drag_state.start_drag(tab_id, tab_response.interact_pointer_pos().unwrap_or_default(), index);
+                    }
+
+                    // Handle tab click (switch to tab)
+                    if tab_response.clicked() && !self.tab_drag_state.is_dragging() {
+                        self.active_tab_index = index;
+                    }
+
+                    // Middle-click to close
+                    if tab_response.middle_clicked() {
+                        tab_to_close = Some(tab_id);
+                    }
+
+                    // Right-click context menu (deferred to avoid borrow issues)
+                    if tab_response.secondary_clicked() {
+                        tab_for_context_menu = Some(tab_id);
+                    }
+
+                    // Close button (X)
+                    if ui.small_button("✕").clicked() {
+                        tab_to_close = Some(tab_id);
+                    }
+                });
+            }
+        }
+
+        // Handle ongoing drag
+        if self.tab_drag_state.is_dragging() {
+            if let Some(pointer_pos) = ui.ctx().pointer_latest_pos() {
+                self.tab_drag_state.update_drag(pointer_pos);
+                self.tab_drag_state.calculate_drop_target(&tab_rects);
+
+                // Render drop indicator
+                if let Some(drop_index) = self.tab_drag_state.drop_target_index {
+                    render_drop_indicator(ui, &tab_rects, drop_index, &self.tab_drag_visuals);
+                }
+
+                // Render ghost tab
+                if let (Some(tab_id), Some(drag_pos)) = (
+                    self.tab_drag_state.dragging_tab,
+                    self.tab_drag_state.current_drag_pos,
+                ) {
+                    if let Some(tab) = self.tabs.get(&tab_id) {
+                        render_ghost_tab(ui, &tab.title, drag_pos, &self.tab_drag_visuals);
+                    }
+                }
+            }
+
+            // End drag on pointer release
+            if ui.input(|i| i.pointer.any_released()) {
+                if let Some((tab_id, from_index, to_index)) = self.tab_drag_state.end_drag() {
+                    // Reorder tabs
+                    let _ = self.reorder_tab(from_index, to_index);
+                }
+            }
+
+            // Cancel drag on Escape
+            if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                self.tab_drag_state.cancel_drag();
+            }
+        }
+
+        // Update overflow handler
+        self.tab_overflow.update(available_width, total_tab_width);
+
+        // Handle scroll wheel for tab overflow
+        ui.input(|i| {
+            if self.tab_overflow.is_overflowing() {
+                self.tab_overflow.handle_scroll(i.smooth_scroll_delta);
+            }
+        });
+
+        // Process deferred actions
+        if let Some(tab_id) = tab_to_close {
+            let _ = self.close_tab(tab_id);
+        }
+
+        if let Some(tab_id) = tab_for_context_menu {
+            self.show_tab_context_menu(tab_id);
+        }
+
+        // New tab button
+        if ui.button("+").clicked() {
+            self.add_tab("New Tab".to_string());
+        }
+
+        // Show scroll indicators if overflowing
+        if self.tab_overflow.is_overflowing() {
+            if self.tab_overflow.offset() > 0.0 {
+                ui.label("◀"); // Left scroll indicator
+            }
+            if self.tab_overflow.offset() < self.tab_overflow.max_scroll {
+                ui.label("▶"); // Right scroll indicator
+            }
+        }
+
+        Ok(())
     }
 
     /// Render context menus
