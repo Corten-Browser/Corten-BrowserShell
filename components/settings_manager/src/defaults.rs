@@ -155,6 +155,74 @@ pub fn create_defaults() -> HashMap<String, SettingValue> {
         SettingValue::Boolean(false),
     );
 
+    // General settings
+    defaults.insert(
+        "general.home_page".to_string(),
+        SettingValue::String("about:blank".to_string()),
+    );
+    defaults.insert(
+        "general.startup_behavior".to_string(),
+        SettingValue::String("new_tab".to_string()), // new_tab, home_page, restore_session
+    );
+    defaults.insert(
+        "general.default_search_engine".to_string(),
+        SettingValue::String("DuckDuckGo".to_string()),
+    );
+
+    // Appearance settings (additional to existing UI settings)
+    defaults.insert(
+        "appearance.toolbar_customization".to_string(),
+        SettingValue::String("default".to_string()), // default, compact, minimal
+    );
+
+    // Privacy settings (additional)
+    defaults.insert(
+        "privacy.cookie_policy".to_string(),
+        SettingValue::String("allow_all".to_string()), // allow_all, block_third_party, block_all
+    );
+    defaults.insert(
+        "privacy.tracking_protection".to_string(),
+        SettingValue::Boolean(true),
+    );
+
+    // Security settings (additional)
+    defaults.insert(
+        "security.safe_browsing".to_string(),
+        SettingValue::Boolean(true),
+    );
+    defaults.insert(
+        "security.password_manager_enabled".to_string(),
+        SettingValue::Boolean(true),
+    );
+
+    // Downloads settings
+    defaults.insert(
+        "downloads.default_location".to_string(),
+        SettingValue::String("~/Downloads".to_string()),
+    );
+    defaults.insert(
+        "downloads.ask_where_to_save".to_string(),
+        SettingValue::Boolean(false),
+    );
+
+    // Advanced settings
+    defaults.insert(
+        "advanced.hardware_acceleration".to_string(),
+        SettingValue::Boolean(true),
+    );
+    defaults.insert(
+        "advanced.proxy_enabled".to_string(),
+        SettingValue::Boolean(false),
+    );
+    defaults.insert(
+        "advanced.proxy_host".to_string(),
+        SettingValue::String("".to_string()),
+    );
+    defaults.insert(
+        "advanced.proxy_port".to_string(),
+        SettingValue::Integer(8080),
+    );
+
     defaults
 }
 

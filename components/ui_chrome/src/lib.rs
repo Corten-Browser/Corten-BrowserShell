@@ -70,7 +70,9 @@
 //! ```
 
 pub mod devtools;
+pub mod menu;
 pub mod print;
+pub mod settings_ui;
 pub mod theme;
 
 use shared_types::{ComponentError, DownloadId, KeyboardShortcut, TabId};
@@ -91,6 +93,12 @@ pub use print::{
     PrintJobStatus, PrintManager, PrintManagerResponse, PrintMargins, PrintPreview,
     PrintPreviewResponse, PrintQuality, PrintSettings,
 };
+
+// Re-export menu types for convenience
+pub use menu::{MenuAction, MenuBar, PanelType, UiAction};
+
+// Re-export settings UI types for convenience
+pub use settings_ui::{SettingsTab, SettingsUi};
 
 /// State for a single tab
 #[derive(Debug, Clone)]
@@ -169,6 +177,7 @@ impl TabState {
 /// Browser UI chrome component
 ///
 /// Manages the browser's UI elements including:
+/// - Application menu bar
 /// - Address bar
 /// - Navigation toolbar (back/forward/reload)
 /// - Tab bar with tab management
@@ -215,6 +224,12 @@ pub struct UiChrome {
 
     /// Bookmarked URLs
     bookmarks: HashSet<String>,
+
+    /// Application menu bar
+    menu_bar: MenuBar,
+
+    /// Settings UI panel
+    settings_ui: SettingsUi,
 }
 
 impl UiChrome {
@@ -240,6 +255,8 @@ impl UiChrome {
             download_count: 0,
             downloads: Vec::new(),
             bookmarks: HashSet::new(),
+            menu_bar: MenuBar::new(),
+            settings_ui: SettingsUi::new(),
         }
     }
 
@@ -688,6 +705,121 @@ impl UiChrome {
         self.bookmarks.contains(url)
     }
 
+    /// Load settings from a settings manager
+    ///
+    /// This should be called when initializing the UI or when settings need to be refreshed
+    pub async fn load_settings(
+        &mut self,
+        settings_manager: &settings_manager::SettingsManager,
+    ) -> Result<(), ComponentError> {
+        let settings = settings_manager.get_all_settings().await?;
+        self.settings_ui.load_settings(settings);
+        Ok(())
+    }
+
+    /// Save settings to a settings manager
+    ///
+    /// This should be called when the user clicks "Save" in the settings UI
+    pub async fn save_settings(
+        &mut self,
+        settings_manager: &settings_manager::SettingsManager,
+    ) -> Result<(), ComponentError> {
+        // Get all settings from the UI
+        let settings = self.settings_ui.get_all_settings();
+
+        // Save each setting
+        for (key, value) in settings {
+            settings_manager
+                .set_setting(key.clone(), value.clone())
+                .await?;
+        }
+
+        // Persist to disk
+        settings_manager.save().await?;
+
+        // Mark as saved in the UI
+        self.settings_ui.mark_saved();
+
+        Ok(())
+    }
+
+    /// Check if there are unsaved settings changes
+    pub fn has_unsaved_settings(&self) -> bool {
+        self.settings_ui.has_unsaved_changes
+    }
+
+    /// Handle menu action
+    fn handle_menu_action(&mut self, action: MenuAction) {
+        match action {
+            MenuAction::TogglePanel(panel_type) => {
+                match panel_type {
+                    PanelType::Settings => self.toggle_settings_panel(),
+                    PanelType::History => self.toggle_history_panel(),
+                    PanelType::Downloads => self.toggle_downloads_panel(),
+                    PanelType::Bookmarks => {
+                        // TODO: Implement bookmarks panel
+                    }
+                    PanelType::DevTools => {
+                        // TODO: Toggle devtools panel
+                    }
+                }
+            }
+            MenuAction::UiAction(ui_action) => {
+                match ui_action {
+                    UiAction::BookmarkPage => {
+                        let _ = self.bookmark_current_page();
+                    }
+                    UiAction::ShowAllHistory => {
+                        self.toggle_history_panel();
+                    }
+                    UiAction::ShowAllBookmarks => {
+                        // TODO: Implement show all bookmarks
+                    }
+                    UiAction::ZoomIn => {
+                        // TODO: Implement zoom in
+                        let current = self.menu_bar.zoom_level();
+                        self.menu_bar.set_zoom_level((current + 10).min(300));
+                    }
+                    UiAction::ZoomOut => {
+                        // TODO: Implement zoom out
+                        let current = self.menu_bar.zoom_level();
+                        self.menu_bar.set_zoom_level((current.saturating_sub(10)).max(25));
+                    }
+                    UiAction::ResetZoom => {
+                        // TODO: Implement reset zoom
+                        self.menu_bar.set_zoom_level(100);
+                    }
+                    UiAction::FullScreen => {
+                        // TODO: Implement full screen toggle
+                    }
+                    UiAction::Find => {
+                        // TODO: Implement find dialog
+                    }
+                    UiAction::About => {
+                        // TODO: Implement about dialog
+                    }
+                    UiAction::Undo | UiAction::Redo | UiAction::Cut | UiAction::Copy
+                    | UiAction::Paste | UiAction::SelectAll => {
+                        // TODO: Implement clipboard operations
+                    }
+                    UiAction::ClearHistory => {
+                        // TODO: Implement clear history
+                    }
+                    UiAction::ReportIssue => {
+                        // TODO: Open issue tracker
+                    }
+                    UiAction::ShowDocumentation => {
+                        // TODO: Open documentation
+                    }
+                }
+            }
+            MenuAction::SendMessage(_msg) => {
+                // TODO: Send message to message bus
+            }
+            MenuAction::None => {}
+        }
+    }
+
     /// Render the UI chrome using egui
     ///
     /// # Errors
@@ -696,6 +828,21 @@ impl UiChrome {
     pub fn render(&mut self, ctx: &egui::Context) -> Result<(), ComponentError> {
         // Handle keyboard shortcuts
         self.handle_keyboard_input(ctx);
+
+        // Update menu bar state based on current UI state
+        self.menu_bar.set_tab_state(
+            !self.tabs.is_empty(),
+            self.tabs.len() > 1,
+        );
+        // TODO: Update navigation state from browser history
+        // TODO: Update edit state from clipboard/undo manager
+
+        // Menu bar at the very top
+        egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
+            if let Some(action) = self.menu_bar.render(ui) {
+                self.handle_menu_action(action);
+            }
+        });
 
         // Top toolbar with navigation buttons
         egui::TopBottomPanel::top("toolbar").show(ctx, |ui| {
@@ -797,17 +944,16 @@ impl UiChrome {
 
         // Left side panels (Settings, History, Downloads)
         if self.settings_panel_visible {
-            egui::SidePanel::left("settings_panel")
-                .default_width(250.0)
-                .show(ctx, |ui| {
-                    ui.heading("⚙ Settings");
-                    ui.separator();
-                    ui.label("Theme: Dark");
-                    ui.label("Download location: ~/Downloads");
-                    ui.separator();
-                    if ui.button("Close").clicked() {
-                        self.toggle_settings_panel();
-                    }
+            // Show the full settings UI with tabs in a window
+            egui::Window::new("⚙ Settings")
+                .default_width(850.0)
+                .default_height(650.0)
+                .resizable(true)
+                .collapsible(false)
+                .open(&mut self.settings_panel_visible)
+                .show(ctx, |_ui| {
+                    // The settings UI renders itself inside the window
+                    self.settings_ui.show(ctx);
                 });
         }
 
