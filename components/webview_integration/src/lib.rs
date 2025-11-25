@@ -474,8 +474,10 @@ impl WebViewManager {
             expires_at: Some(Utc::now() + chrono::Duration::hours(24)),
         };
 
-        let mut cache = self.cache.write().await;
-        cache.insert(url, resource);
+        {
+            let mut cache = self.cache.write().await;
+            cache.insert(url, resource);
+        } // Drop the write lock before calling cleanup_cache
 
         // Clean up old cache entries if over size limit
         self.cleanup_cache().await;
