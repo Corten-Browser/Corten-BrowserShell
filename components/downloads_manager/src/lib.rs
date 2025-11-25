@@ -109,6 +109,8 @@ enum ControlSignal {
 pub struct DownloadsManager {
     /// Map of download ID to download task
     downloads: Arc<Mutex<HashMap<DownloadId, DownloadTask>>>,
+    /// Whether to use mock mode for downloads (for testing)
+    mock_mode: bool,
 }
 
 impl DownloadsManager {
@@ -116,6 +118,19 @@ impl DownloadsManager {
     pub fn new() -> Self {
         Self {
             downloads: Arc::new(Mutex::new(HashMap::new())),
+            mock_mode: false,
+        }
+    }
+
+    /// Create a new DownloadsManager with mock mode enabled (for testing)
+    ///
+    /// This method creates a manager that simulates downloads without network access.
+    /// Useful for integration tests where real network downloads are not desired.
+    #[cfg(any(test, feature = "test-mock"))]
+    pub fn new_mock() -> Self {
+        Self {
+            downloads: Arc::new(Mutex::new(HashMap::new())),
+            mock_mode: true,
         }
     }
 
@@ -161,10 +176,8 @@ impl DownloadsManager {
         // Create control channel
         let (control_tx, control_rx) = tokio::sync::mpsc::channel(10);
 
-        // Capture mock mode at task creation time to avoid race conditions with env vars
-        let mock_mode = std::env::var("DOWNLOADS_MOCK_MODE")
-            .map(|v| v == "1" || v.to_lowercase() == "true")
-            .unwrap_or(false);
+        // Use instance's mock_mode setting (avoids env var race conditions in tests)
+        let mock_mode = self.mock_mode;
 
         // Spawn download task
         let info_clone = info.clone();

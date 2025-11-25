@@ -53,10 +53,8 @@ async fn test_start_download_invalid_url() {
 
 #[tokio::test]
 async fn test_pause_download() {
-    // Enable mock mode for predictable testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = DownloadsManager::new();
+    // Use mock manager for predictable testing (avoids env var race conditions)
+    let manager = DownloadsManager::new_mock();
     let url = "https://example.com/file.zip".to_string();
 
     let download_id = manager.start_download(url, None).await.unwrap();
@@ -85,10 +83,8 @@ async fn test_pause_nonexistent_download() {
 
 #[tokio::test]
 async fn test_resume_download() {
-    // Enable mock mode for predictable testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = DownloadsManager::new();
+    // Use mock manager for predictable testing (avoids env var race conditions)
+    let manager = DownloadsManager::new_mock();
     let url = "https://example.com/file.zip".to_string();
 
     let download_id = manager.start_download(url, None).await.unwrap();
@@ -124,10 +120,8 @@ async fn test_resume_nonexistent_download() {
 
 #[tokio::test]
 async fn test_cancel_download() {
-    // Enable mock mode for predictable testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = DownloadsManager::new();
+    // Use mock manager for predictable testing (avoids env var race conditions)
+    let manager = DownloadsManager::new_mock();
     let url = "https://example.com/large-file.zip".to_string();
 
     let download_id = manager.start_download(url, None).await.unwrap();
@@ -182,10 +176,8 @@ async fn test_get_active_downloads() {
 
 #[tokio::test]
 async fn test_get_active_downloads_excludes_cancelled() {
-    // Enable mock mode for predictable testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = DownloadsManager::new();
+    // Use mock manager for predictable testing (avoids env var race conditions)
+    let manager = DownloadsManager::new_mock();
 
     let url1 = "https://example.com/file1.zip".to_string();
     let url2 = "https://example.com/file2.pdf".to_string();
@@ -226,10 +218,8 @@ async fn test_multiple_concurrent_downloads() {
 
 #[tokio::test]
 async fn test_download_progress_increases() {
-    // Enable mock mode for predictable testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = DownloadsManager::new();
+    // Use mock manager for predictable testing (avoids env var race conditions)
+    let manager = DownloadsManager::new_mock();
     let url = "https://example.com/file.zip".to_string();
 
     let download_id = manager.start_download(url, None).await.unwrap();

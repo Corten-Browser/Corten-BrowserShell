@@ -95,10 +95,8 @@ fn test_progress_percentage_complete() {
 
 #[tokio::test]
 async fn test_get_all_downloads() {
-    // Set mock mode for testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = downloads_manager::DownloadsManager::new();
+    // Use mock manager for testing (avoids env var race conditions)
+    let manager = downloads_manager::DownloadsManager::new_mock();
 
     // Start some downloads
     let id1 = manager
@@ -116,17 +114,12 @@ async fn test_get_all_downloads() {
     assert_eq!(all_downloads.len(), 2);
     assert!(all_downloads.iter().any(|d| d.id == id1));
     assert!(all_downloads.iter().any(|d| d.id == id2));
-
-    // Cleanup
-    std::env::remove_var("DOWNLOADS_MOCK_MODE");
 }
 
 #[tokio::test]
 async fn test_get_all_download_metrics() {
-    // Set mock mode for testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = downloads_manager::DownloadsManager::new();
+    // Use mock manager for testing (avoids env var race conditions)
+    let manager = downloads_manager::DownloadsManager::new_mock();
 
     // Start a download
     let _id = manager
@@ -152,17 +145,12 @@ async fn test_get_all_download_metrics() {
         "Speed should be > 0, got {}",
         metrics[0].bytes_per_second
     );
-
-    // Cleanup
-    std::env::remove_var("DOWNLOADS_MOCK_MODE");
 }
 
 #[tokio::test]
 async fn test_get_download_metrics() {
-    // Set mock mode for testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = downloads_manager::DownloadsManager::new();
+    // Use mock manager for testing (avoids env var race conditions)
+    let manager = downloads_manager::DownloadsManager::new_mock();
 
     // Start a download
     let id = manager
@@ -189,17 +177,12 @@ async fn test_get_download_metrics() {
         "Speed should be > 0, got {}",
         metrics.bytes_per_second
     );
-
-    // Cleanup
-    std::env::remove_var("DOWNLOADS_MOCK_MODE");
 }
 
 #[tokio::test]
 async fn test_metrics_for_paused_download() {
-    // Set mock mode for testing
-    std::env::set_var("DOWNLOADS_MOCK_MODE", "1");
-
-    let manager = downloads_manager::DownloadsManager::new();
+    // Use mock manager for testing (avoids env var race conditions)
+    let manager = downloads_manager::DownloadsManager::new_mock();
 
     // Start a download
     let id = manager
@@ -253,7 +236,4 @@ async fn test_metrics_for_paused_download() {
 
     // Speed should be 0 for paused downloads
     assert_eq!(metrics.bytes_per_second, 0);
-
-    // Cleanup
-    std::env::remove_var("DOWNLOADS_MOCK_MODE");
 }
