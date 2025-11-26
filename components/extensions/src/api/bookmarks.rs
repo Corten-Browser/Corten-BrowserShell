@@ -82,7 +82,7 @@ pub enum UnmodifiableReason {
 }
 
 /// Details for creating a new bookmark
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateBookmarkDetails {
     /// Parent folder ID (defaults to "Other Bookmarks")
@@ -155,6 +155,21 @@ pub struct BookmarksApi {
     /// Callback for searching bookmarks
     search_callback: Option<Box<dyn Fn(BookmarkSearchQuery) -> Vec<BookmarkTreeNode> + Send + Sync>>,
 
+    /// Callback for creating bookmarks
+    create_callback: Option<Box<dyn Fn(CreateBookmarkDetails) -> Result<BookmarkTreeNode, BookmarksApiError> + Send + Sync>>,
+
+    /// Callback for moving bookmarks
+    move_callback: Option<Box<dyn Fn(String, MoveBookmarkDetails) -> Result<BookmarkTreeNode, BookmarksApiError> + Send + Sync>>,
+
+    /// Callback for updating bookmarks
+    update_callback: Option<Box<dyn Fn(String, UpdateBookmarkDetails) -> Result<BookmarkTreeNode, BookmarksApiError> + Send + Sync>>,
+
+    /// Callback for removing bookmarks
+    remove_callback: Option<Box<dyn Fn(String) -> Result<(), BookmarksApiError> + Send + Sync>>,
+
+    /// Callback for removing bookmark trees
+    remove_tree_callback: Option<Box<dyn Fn(String) -> Result<(), BookmarksApiError> + Send + Sync>>,
+
     /// Maximum depth for getSubTree (reserved for future use)
     #[allow(dead_code)]
     max_sustained_depth: usize,
@@ -175,6 +190,11 @@ impl BookmarksApi {
         Self {
             get_tree_callback: None,
             search_callback: None,
+            create_callback: None,
+            move_callback: None,
+            update_callback: None,
+            remove_callback: None,
+            remove_tree_callback: None,
             max_sustained_depth: 100,
         }
     }
@@ -193,6 +213,46 @@ impl BookmarksApi {
         callback: Box<dyn Fn(BookmarkSearchQuery) -> Vec<BookmarkTreeNode> + Send + Sync>,
     ) {
         self.search_callback = Some(callback);
+    }
+
+    /// Set the callback for creating bookmarks
+    pub fn set_create_callback(
+        &mut self,
+        callback: Box<dyn Fn(CreateBookmarkDetails) -> Result<BookmarkTreeNode, BookmarksApiError> + Send + Sync>,
+    ) {
+        self.create_callback = Some(callback);
+    }
+
+    /// Set the callback for moving bookmarks
+    pub fn set_move_callback(
+        &mut self,
+        callback: Box<dyn Fn(String, MoveBookmarkDetails) -> Result<BookmarkTreeNode, BookmarksApiError> + Send + Sync>,
+    ) {
+        self.move_callback = Some(callback);
+    }
+
+    /// Set the callback for updating bookmarks
+    pub fn set_update_callback(
+        &mut self,
+        callback: Box<dyn Fn(String, UpdateBookmarkDetails) -> Result<BookmarkTreeNode, BookmarksApiError> + Send + Sync>,
+    ) {
+        self.update_callback = Some(callback);
+    }
+
+    /// Set the callback for removing bookmarks
+    pub fn set_remove_callback(
+        &mut self,
+        callback: Box<dyn Fn(String) -> Result<(), BookmarksApiError> + Send + Sync>,
+    ) {
+        self.remove_callback = Some(callback);
+    }
+
+    /// Set the callback for removing bookmark trees
+    pub fn set_remove_tree_callback(
+        &mut self,
+        callback: Box<dyn Fn(String) -> Result<(), BookmarksApiError> + Send + Sync>,
+    ) {
+        self.remove_tree_callback = Some(callback);
     }
 
     /// Get the entire bookmark tree
@@ -381,10 +441,14 @@ impl BookmarksApi {
     /// # Returns
     ///
     /// Created bookmark node
-    pub fn create(&self, _details: CreateBookmarkDetails) -> Result<BookmarkTreeNode, BookmarksApiError> {
-        Err(BookmarksApiError::OperationFailed(
-            "Bookmark creation requires integration with BookmarksManager".to_string(),
-        ))
+    pub fn create(&self, details: CreateBookmarkDetails) -> Result<BookmarkTreeNode, BookmarksApiError> {
+        if let Some(ref callback) = self.create_callback {
+            callback(details)
+        } else {
+            Err(BookmarksApiError::OperationFailed(
+                "Bookmark creation requires integration with BookmarksManager".to_string(),
+            ))
+        }
     }
 
     /// Move a bookmark to a new location
@@ -400,16 +464,20 @@ impl BookmarksApi {
     pub fn move_bookmark(
         &self,
         id: String,
-        _destination: MoveBookmarkDetails,
+        destination: MoveBookmarkDetails,
     ) -> Result<BookmarkTreeNode, BookmarksApiError> {
         // Check if trying to move root folders
         if id == "0" || id == Self::BOOKMARKS_BAR_ID || id == Self::OTHER_BOOKMARKS_ID {
             return Err(BookmarksApiError::CannotModifyRoot);
         }
 
-        Err(BookmarksApiError::OperationFailed(
-            "Bookmark move requires integration with BookmarksManager".to_string(),
-        ))
+        if let Some(ref callback) = self.move_callback {
+            callback(id, destination)
+        } else {
+            Err(BookmarksApiError::OperationFailed(
+                "Bookmark move requires integration with BookmarksManager".to_string(),
+            ))
+        }
     }
 
     /// Update a bookmark
@@ -425,16 +493,20 @@ impl BookmarksApi {
     pub fn update(
         &self,
         id: String,
-        _changes: UpdateBookmarkDetails,
+        changes: UpdateBookmarkDetails,
     ) -> Result<BookmarkTreeNode, BookmarksApiError> {
         // Check if trying to update root folders
         if id == "0" {
             return Err(BookmarksApiError::CannotModifyRoot);
         }
 
-        Err(BookmarksApiError::OperationFailed(
-            "Bookmark update requires integration with BookmarksManager".to_string(),
-        ))
+        if let Some(ref callback) = self.update_callback {
+            callback(id, changes)
+        } else {
+            Err(BookmarksApiError::OperationFailed(
+                "Bookmark update requires integration with BookmarksManager".to_string(),
+            ))
+        }
     }
 
     /// Remove a bookmark
@@ -448,9 +520,13 @@ impl BookmarksApi {
             return Err(BookmarksApiError::CannotModifyRoot);
         }
 
-        Err(BookmarksApiError::OperationFailed(
-            "Bookmark removal requires integration with BookmarksManager".to_string(),
-        ))
+        if let Some(ref callback) = self.remove_callback {
+            callback(id)
+        } else {
+            Err(BookmarksApiError::OperationFailed(
+                "Bookmark removal requires integration with BookmarksManager".to_string(),
+            ))
+        }
     }
 
     /// Remove a bookmark tree (folder and all contents)
@@ -464,9 +540,13 @@ impl BookmarksApi {
             return Err(BookmarksApiError::CannotModifyRoot);
         }
 
-        Err(BookmarksApiError::OperationFailed(
-            "Bookmark tree removal requires integration with BookmarksManager".to_string(),
-        ))
+        if let Some(ref callback) = self.remove_tree_callback {
+            callback(id)
+        } else {
+            Err(BookmarksApiError::OperationFailed(
+                "Bookmark tree removal requires integration with BookmarksManager".to_string(),
+            ))
+        }
     }
 
     // Helper methods
@@ -679,5 +759,123 @@ mod tests {
         let nodes = result.unwrap();
         assert_eq!(nodes.len(), 1);
         assert_eq!(nodes[0].title, "Custom");
+    }
+
+    #[test]
+    fn test_create_with_callback() {
+        let mut api = BookmarksApi::new();
+        api.set_create_callback(Box::new(|details| {
+            Ok(BookmarkTreeNode {
+                id: "new-123".to_string(),
+                parent_id: details.parent_id,
+                index: details.index,
+                url: details.url,
+                title: details.title.unwrap_or_else(|| "Untitled".to_string()),
+                date_added: Some(1234567890000),
+                date_group_modified: None,
+                date_last_used: None,
+                unmodifiable: None,
+                children: None,
+            })
+        }));
+
+        let details = CreateBookmarkDetails {
+            parent_id: Some(BookmarksApi::OTHER_BOOKMARKS_ID.to_string()),
+            title: Some("Test Bookmark".to_string()),
+            url: Some("https://test.com".to_string()),
+            ..Default::default()
+        };
+        let result = api.create(details);
+        assert!(result.is_ok());
+        let node = result.unwrap();
+        assert_eq!(node.id, "new-123");
+        assert_eq!(node.title, "Test Bookmark");
+    }
+
+    #[test]
+    fn test_update_with_callback() {
+        let mut api = BookmarksApi::new();
+        api.set_update_callback(Box::new(|id, changes| {
+            Ok(BookmarkTreeNode {
+                id,
+                parent_id: Some("0".to_string()),
+                index: Some(0),
+                url: changes.url,
+                title: changes.title.unwrap_or_else(|| "Updated".to_string()),
+                date_added: Some(1234567890000),
+                date_group_modified: Some(1234567900000),
+                date_last_used: None,
+                unmodifiable: None,
+                children: None,
+            })
+        }));
+
+        let changes = UpdateBookmarkDetails {
+            title: Some("Updated Title".to_string()),
+            url: Some("https://updated.com".to_string()),
+        };
+        let result = api.update("test-id".to_string(), changes);
+        assert!(result.is_ok());
+        let node = result.unwrap();
+        assert_eq!(node.title, "Updated Title");
+        assert_eq!(node.url, Some("https://updated.com".to_string()));
+    }
+
+    #[test]
+    fn test_remove_with_callback() {
+        let mut api = BookmarksApi::new();
+        api.set_remove_callback(Box::new(|_id| Ok(())));
+
+        let result = api.remove("test-id".to_string());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_with_callback() {
+        let mut api = BookmarksApi::new();
+        api.set_move_callback(Box::new(|id, destination| {
+            Ok(BookmarkTreeNode {
+                id,
+                parent_id: destination.parent_id,
+                index: destination.index,
+                url: Some("https://moved.com".to_string()),
+                title: "Moved".to_string(),
+                date_added: Some(1234567890000),
+                date_group_modified: Some(1234567900000),
+                date_last_used: None,
+                unmodifiable: None,
+                children: None,
+            })
+        }));
+
+        let destination = MoveBookmarkDetails {
+            parent_id: Some("new-parent".to_string()),
+            index: Some(5),
+        };
+        let result = api.move_bookmark("test-id".to_string(), destination);
+        assert!(result.is_ok());
+        let node = result.unwrap();
+        assert_eq!(node.parent_id, Some("new-parent".to_string()));
+        assert_eq!(node.index, Some(5));
+    }
+
+    #[test]
+    fn test_operations_without_callbacks() {
+        let api = BookmarksApi::new();
+
+        let create_result = api.create(CreateBookmarkDetails::default());
+        assert!(create_result.is_err());
+
+        let update_result = api.update("test".to_string(), UpdateBookmarkDetails::default());
+        assert!(update_result.is_err());
+
+        let remove_result = api.remove("test".to_string());
+        assert!(remove_result.is_err());
+
+        let move_result = api.move_bookmark("test".to_string(), MoveBookmarkDetails {
+            parent_id: None,
+            index: None,
+        });
+        assert!(move_result.is_err());
     }
 }

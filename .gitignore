@@ -231,3 +231,8 @@ orchestration/data/logs/*
 orchestration/data/checkpoints/*
 orchestration/data/reports/*
 !orchestration/data/*/.gitkeep
+
+# Python cache (global)
+__pycache__/
+*.pyc
+*.pyo

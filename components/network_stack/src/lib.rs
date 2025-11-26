@@ -115,15 +115,18 @@
 //!     .cache_mode(CacheMode::NoStore);  // Bypass cache
 //! ```
 
+mod cache;
 mod client;
 mod error;
 mod interceptor;
 mod privacy_interceptor;
 pub mod protocol;
 mod request;
+mod resource_loader;
 mod response;
 
 // Re-export public types
+pub use cache::{CacheEntry, CacheStorage, CachingInterceptor, DiskCache, MemoryCache};
 pub use client::{
     Cookie, CookieStore, HttpClient, HttpClientBuilder, NetworkClient, NetworkClientConfig,
     SameSite,
@@ -138,6 +141,7 @@ pub use privacy_interceptor::{PrivacyInterceptor, PrivacyInterceptorConfig};
 pub use request::{
     CacheMode, CredentialsMode, HeaderMap, Method, NetworkRequest, RedirectPolicy, ResourceType,
 };
+pub use resource_loader::{ResourceLoadResult, ResourceLoader, ResourceLoaderBuilder};
 pub use response::{CacheStatus, NetworkResponse, StatusCode};
 
 /// Re-export url crate for convenience.

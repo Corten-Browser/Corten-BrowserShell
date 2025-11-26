@@ -98,8 +98,15 @@ pub enum CacheStatus {
     Stale,
 }
 
+impl CacheStatus {
+    /// Check if this response was served from cache
+    pub fn is_hit(&self) -> bool {
+        matches!(self, CacheStatus::Hit | CacheStatus::Revalidated)
+    }
+}
+
 /// A network response.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkResponse {
     /// HTTP status code.
     pub status: StatusCode,
@@ -108,8 +115,10 @@ pub struct NetworkResponse {
     /// Response body.
     pub body: Vec<u8>,
     /// Time elapsed for the request.
+    #[serde(with = "duration_serde")]
     pub elapsed: Duration,
     /// Final URL (after redirects).
+    #[serde(with = "url_serde")]
     pub url: Url,
     /// Whether the response came from cache.
     pub cache_status: CacheStatus,
@@ -117,6 +126,47 @@ pub struct NetworkResponse {
     pub content_type: Option<String>,
     /// Content length from headers (convenience).
     pub content_length: Option<usize>,
+}
+
+// Helper modules for serializing Duration and Url
+mod duration_serde {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use std::time::Duration;
+
+    pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        duration.as_secs().serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let secs = u64::deserialize(deserializer)?;
+        Ok(Duration::from_secs(secs))
+    }
+}
+
+mod url_serde {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use url::Url;
+
+    pub fn serialize<S>(url: &Url, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        url.as_str().serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Url, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Url::parse(&s).map_err(serde::de::Error::custom)
+    }
 }
 
 impl NetworkResponse {

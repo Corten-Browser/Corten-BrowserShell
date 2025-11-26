@@ -20,9 +20,9 @@ mod offline_queue;
 mod status;
 mod syncable;
 
-pub use account::{SyncAccount, SyncAccountCredentials};
+pub use account::{SyncAccount, SyncAccountCredentials, DeviceSettings};
 pub use change::{Change, ChangeOperation, ChangeId};
-pub use conflict::{ConflictResolution, ConflictStrategy};
+pub use conflict::{Conflict, ConflictResolution, ConflictStrategy};
 pub use encryption::{EncryptedData, EncryptionKey, SyncEncryption};
 pub use manager::SyncManager;
 pub use offline_queue::{OfflineQueue, QueuedChange};

@@ -1753,6 +1753,7 @@ dependencies = [
  "shared_types",
  "thiserror 1.0.69",
  "tokio",
+ "tracing",
  "url",
  "uuid",
 ]
@@ -5148,6 +5149,7 @@ dependencies = [
  "message_bus",
  "serde",
  "serde_json",
+ "settings_manager",
  "shared_types",
  "thiserror 1.0.69",
  "tokio",

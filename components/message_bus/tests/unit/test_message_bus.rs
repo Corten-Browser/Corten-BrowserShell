@@ -1,6 +1,6 @@
 //! Unit tests for MessageBus functionality
 
-use message_bus::{ComponentMessage, ComponentResponse, MessageBus};
+use message_bus::{ComponentMessage, MessageBus};
 use shared_types::{ComponentError, KeyboardShortcut, WindowId};
 
 #[tokio::test]

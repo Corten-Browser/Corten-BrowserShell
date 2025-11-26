@@ -271,6 +271,30 @@ pub struct MoveTabProperties {
 pub struct TabsApi {
     /// Callback for querying tabs (injected from tab manager)
     query_callback: Option<Box<dyn Fn(TabQuery) -> Vec<QueryTabInfo> + Send + Sync>>,
+
+    /// Callback for creating tabs
+    create_callback: Option<Box<dyn Fn(CreateTabProperties) -> Result<QueryTabInfo, TabsApiError> + Send + Sync>>,
+
+    /// Callback for updating tabs
+    update_callback: Option<Box<dyn Fn(u64, UpdateTabProperties) -> Result<QueryTabInfo, TabsApiError> + Send + Sync>>,
+
+    /// Callback for removing tabs
+    remove_callback: Option<Box<dyn Fn(Vec<u64>) -> Result<(), TabsApiError> + Send + Sync>>,
+
+    /// Callback for moving tabs
+    move_callback: Option<Box<dyn Fn(Vec<u64>, MoveTabProperties) -> Result<Vec<QueryTabInfo>, TabsApiError> + Send + Sync>>,
+
+    /// Callback for reloading tabs
+    reload_callback: Option<Box<dyn Fn(Option<u64>, bool) -> Result<(), TabsApiError> + Send + Sync>>,
+
+    /// Callback for duplicating tabs
+    duplicate_callback: Option<Box<dyn Fn(u64) -> Result<QueryTabInfo, TabsApiError> + Send + Sync>>,
+
+    /// Callback for discarding tabs
+    discard_callback: Option<Box<dyn Fn(Option<u64>) -> Result<QueryTabInfo, TabsApiError> + Send + Sync>>,
+
+    /// Callback for navigation (back/forward)
+    navigate_callback: Option<Box<dyn Fn(Option<u64>, bool) -> Result<(), TabsApiError> + Send + Sync>>,
 }
 
 impl TabsApi {
@@ -278,6 +302,14 @@ impl TabsApi {
     pub fn new() -> Self {
         Self {
             query_callback: None,
+            create_callback: None,
+            update_callback: None,
+            remove_callback: None,
+            move_callback: None,
+            reload_callback: None,
+            duplicate_callback: None,
+            discard_callback: None,
+            navigate_callback: None,
         }
     }
 
@@ -287,6 +319,70 @@ impl TabsApi {
         callback: Box<dyn Fn(TabQuery) -> Vec<QueryTabInfo> + Send + Sync>,
     ) {
         self.query_callback = Some(callback);
+    }
+
+    /// Set the create tab callback
+    pub fn set_create_callback(
+        &mut self,
+        callback: Box<dyn Fn(CreateTabProperties) -> Result<QueryTabInfo, TabsApiError> + Send + Sync>,
+    ) {
+        self.create_callback = Some(callback);
+    }
+
+    /// Set the update tab callback
+    pub fn set_update_callback(
+        &mut self,
+        callback: Box<dyn Fn(u64, UpdateTabProperties) -> Result<QueryTabInfo, TabsApiError> + Send + Sync>,
+    ) {
+        self.update_callback = Some(callback);
+    }
+
+    /// Set the remove tab callback
+    pub fn set_remove_callback(
+        &mut self,
+        callback: Box<dyn Fn(Vec<u64>) -> Result<(), TabsApiError> + Send + Sync>,
+    ) {
+        self.remove_callback = Some(callback);
+    }
+
+    /// Set the move tabs callback
+    pub fn set_move_callback(
+        &mut self,
+        callback: Box<dyn Fn(Vec<u64>, MoveTabProperties) -> Result<Vec<QueryTabInfo>, TabsApiError> + Send + Sync>,
+    ) {
+        self.move_callback = Some(callback);
+    }
+
+    /// Set the reload tab callback
+    pub fn set_reload_callback(
+        &mut self,
+        callback: Box<dyn Fn(Option<u64>, bool) -> Result<(), TabsApiError> + Send + Sync>,
+    ) {
+        self.reload_callback = Some(callback);
+    }
+
+    /// Set the duplicate tab callback
+    pub fn set_duplicate_callback(
+        &mut self,
+        callback: Box<dyn Fn(u64) -> Result<QueryTabInfo, TabsApiError> + Send + Sync>,
+    ) {
+        self.duplicate_callback = Some(callback);
+    }
+
+    /// Set the discard tab callback
+    pub fn set_discard_callback(
+        &mut self,
+        callback: Box<dyn Fn(Option<u64>) -> Result<QueryTabInfo, TabsApiError> + Send + Sync>,
+    ) {
+        self.discard_callback = Some(callback);
+    }
+
+    /// Set the navigate (back/forward) callback
+    pub fn set_navigate_callback(
+        &mut self,
+        callback: Box<dyn Fn(Option<u64>, bool) -> Result<(), TabsApiError> + Send + Sync>,
+    ) {
+        self.navigate_callback = Some(callback);
     }
 
     /// Query for tabs matching the given criteria
@@ -333,12 +429,14 @@ impl TabsApi {
     /// # Returns
     ///
     /// Created tab information
-    pub fn create(&self, _props: CreateTabProperties) -> Result<QueryTabInfo, TabsApiError> {
-        // This would integrate with the tab manager
-        // For now, return a placeholder error
-        Err(TabsApiError::OperationFailed(
-            "Tab creation requires integration with TabManager".to_string(),
-        ))
+    pub fn create(&self, props: CreateTabProperties) -> Result<QueryTabInfo, TabsApiError> {
+        if let Some(ref callback) = self.create_callback {
+            callback(props)
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Tab creation requires integration with TabManager".to_string(),
+            ))
+        }
     }
 
     /// Update an existing tab
@@ -353,13 +451,16 @@ impl TabsApi {
     /// Updated tab information
     pub fn update(
         &self,
-        _tab_id: u64,
-        _props: UpdateTabProperties,
+        tab_id: u64,
+        props: UpdateTabProperties,
     ) -> Result<QueryTabInfo, TabsApiError> {
-        // This would integrate with the tab manager
-        Err(TabsApiError::OperationFailed(
-            "Tab update requires integration with TabManager".to_string(),
-        ))
+        if let Some(ref callback) = self.update_callback {
+            callback(tab_id, props)
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Tab update requires integration with TabManager".to_string(),
+            ))
+        }
     }
 
     /// Remove one or more tabs
@@ -371,11 +472,14 @@ impl TabsApi {
     /// # Returns
     ///
     /// Success or error
-    pub fn remove(&self, _tab_ids: Vec<u64>) -> Result<(), TabsApiError> {
-        // This would integrate with the tab manager
-        Err(TabsApiError::OperationFailed(
-            "Tab removal requires integration with TabManager".to_string(),
-        ))
+    pub fn remove(&self, tab_ids: Vec<u64>) -> Result<(), TabsApiError> {
+        if let Some(ref callback) = self.remove_callback {
+            callback(tab_ids)
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Tab removal requires integration with TabManager".to_string(),
+            ))
+        }
     }
 
     /// Move tabs to a new position
@@ -390,12 +494,16 @@ impl TabsApi {
     /// Moved tab information
     pub fn move_tabs(
         &self,
-        _tab_ids: Vec<u64>,
-        _props: MoveTabProperties,
+        tab_ids: Vec<u64>,
+        props: MoveTabProperties,
     ) -> Result<Vec<QueryTabInfo>, TabsApiError> {
-        Err(TabsApiError::OperationFailed(
-            "Tab move requires integration with TabManager".to_string(),
-        ))
+        if let Some(ref callback) = self.move_callback {
+            callback(tab_ids, props)
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Tab move requires integration with TabManager".to_string(),
+            ))
+        }
     }
 
     /// Reload a tab
@@ -408,10 +516,14 @@ impl TabsApi {
     /// # Returns
     ///
     /// Success or error
-    pub fn reload(&self, _tab_id: Option<u64>, _bypass_cache: bool) -> Result<(), TabsApiError> {
-        Err(TabsApiError::OperationFailed(
-            "Tab reload requires integration with TabManager".to_string(),
-        ))
+    pub fn reload(&self, tab_id: Option<u64>, bypass_cache: bool) -> Result<(), TabsApiError> {
+        if let Some(ref callback) = self.reload_callback {
+            callback(tab_id, bypass_cache)
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Tab reload requires integration with TabManager".to_string(),
+            ))
+        }
     }
 
     /// Duplicate a tab
@@ -423,10 +535,14 @@ impl TabsApi {
     /// # Returns
     ///
     /// Duplicated tab information
-    pub fn duplicate(&self, _tab_id: u64) -> Result<QueryTabInfo, TabsApiError> {
-        Err(TabsApiError::OperationFailed(
-            "Tab duplication requires integration with TabManager".to_string(),
-        ))
+    pub fn duplicate(&self, tab_id: u64) -> Result<QueryTabInfo, TabsApiError> {
+        if let Some(ref callback) = self.duplicate_callback {
+            callback(tab_id)
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Tab duplication requires integration with TabManager".to_string(),
+            ))
+        }
     }
 
     /// Get the currently active tab in the specified window
@@ -462,10 +578,14 @@ impl TabsApi {
     /// # Returns
     ///
     /// Discarded tab information
-    pub fn discard(&self, _tab_id: Option<u64>) -> Result<QueryTabInfo, TabsApiError> {
-        Err(TabsApiError::OperationFailed(
-            "Tab discard requires integration with TabManager".to_string(),
-        ))
+    pub fn discard(&self, tab_id: Option<u64>) -> Result<QueryTabInfo, TabsApiError> {
+        if let Some(ref callback) = self.discard_callback {
+            callback(tab_id)
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Tab discard requires integration with TabManager".to_string(),
+            ))
+        }
     }
 
     /// Go back in the tab's navigation history
@@ -473,10 +593,14 @@ impl TabsApi {
     /// # Arguments
     ///
     /// * `tab_id` - ID of the tab (None for current tab)
-    pub fn go_back(&self, _tab_id: Option<u64>) -> Result<(), TabsApiError> {
-        Err(TabsApiError::OperationFailed(
-            "Navigation requires integration with TabManager".to_string(),
-        ))
+    pub fn go_back(&self, tab_id: Option<u64>) -> Result<(), TabsApiError> {
+        if let Some(ref callback) = self.navigate_callback {
+            callback(tab_id, false) // false = go back
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Navigation requires integration with TabManager".to_string(),
+            ))
+        }
     }
 
     /// Go forward in the tab's navigation history
@@ -484,10 +608,14 @@ impl TabsApi {
     /// # Arguments
     ///
     /// * `tab_id` - ID of the tab (None for current tab)
-    pub fn go_forward(&self, _tab_id: Option<u64>) -> Result<(), TabsApiError> {
-        Err(TabsApiError::OperationFailed(
-            "Navigation requires integration with TabManager".to_string(),
-        ))
+    pub fn go_forward(&self, tab_id: Option<u64>) -> Result<(), TabsApiError> {
+        if let Some(ref callback) = self.navigate_callback {
+            callback(tab_id, true) // true = go forward
+        } else {
+            Err(TabsApiError::OperationFailed(
+                "Navigation requires integration with TabManager".to_string(),
+            ))
+        }
     }
 }
 
@@ -589,5 +717,100 @@ mod tests {
         };
         assert!(props.url.is_some());
         assert_eq!(props.active, Some(true));
+    }
+
+    #[test]
+    fn test_create_with_callback() {
+        let mut api = TabsApi::new();
+        api.set_create_callback(Box::new(|props| {
+            Ok(QueryTabInfo {
+                id: 123,
+                index: 0,
+                window_id: 1,
+                active: props.active.unwrap_or(false),
+                pinned: props.pinned.unwrap_or(false),
+                highlighted: false,
+                incognito: false,
+                url: props.url.clone(),
+                title: Some("New Tab".to_string()),
+                fav_icon_url: None,
+                status: TabStatus::Loading,
+                audible: false,
+                muted_info: None,
+                discarded: false,
+                auto_discardable: true,
+                group_id: None,
+            })
+        }));
+
+        let props = CreateTabProperties {
+            url: Some("https://example.com".to_string()),
+            active: Some(true),
+            ..Default::default()
+        };
+        let result = api.create(props);
+        assert!(result.is_ok());
+        let tab = result.unwrap();
+        assert_eq!(tab.id, 123);
+        assert!(tab.active);
+    }
+
+    #[test]
+    fn test_update_with_callback() {
+        let mut api = TabsApi::new();
+        api.set_update_callback(Box::new(|tab_id, props| {
+            Ok(QueryTabInfo {
+                id: tab_id,
+                index: 0,
+                window_id: 1,
+                active: props.active.unwrap_or(false),
+                pinned: props.pinned.unwrap_or(false),
+                highlighted: false,
+                incognito: false,
+                url: props.url.clone(),
+                title: Some("Updated Tab".to_string()),
+                fav_icon_url: None,
+                status: TabStatus::Complete,
+                audible: false,
+                muted_info: None,
+                discarded: false,
+                auto_discardable: true,
+                group_id: None,
+            })
+        }));
+
+        let props = UpdateTabProperties {
+            url: Some("https://updated.com".to_string()),
+            active: Some(true),
+            ..Default::default()
+        };
+        let result = api.update(1, props);
+        assert!(result.is_ok());
+        let tab = result.unwrap();
+        assert_eq!(tab.id, 1);
+        assert_eq!(tab.url, Some("https://updated.com".to_string()));
+    }
+
+    #[test]
+    fn test_remove_with_callback() {
+        let mut api = TabsApi::new();
+        api.set_remove_callback(Box::new(|_tab_ids| Ok(())));
+
+        let result = api.remove(vec![1, 2, 3]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_operations_without_callbacks() {
+        let api = TabsApi::new();
+
+        let create_result = api.create(CreateTabProperties::default());
+        assert!(create_result.is_err());
+
+        let update_result = api.update(1, UpdateTabProperties::default());
+        assert!(update_result.is_err());
+
+        let remove_result = api.remove(vec![1]);
+        assert!(remove_result.is_err());
     }
 }

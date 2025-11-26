@@ -1,7 +1,7 @@
 //! Security Manager Component
 //!
 //! Provides security features including:
-//! - URL sanitization and validation
+//! - URL sanitization and validation (basic + advanced with punycode protection)
 //! - Input filtering and XSS prevention
 //! - Content Security Policy enforcement
 //! - Permission management
@@ -9,14 +9,23 @@
 //! - Password management with encrypted storage
 //! - Privacy management (DNT, cookie blocking, tracking protection)
 //! - Ad blocking and content filtering
+//! - Sandbox enforcement hooks
+//! - Security audit logging
 
 pub mod ad_blocker;
+pub mod audit_logger;
 mod ipc_validator;
 pub mod password_manager;
 pub mod privacy;
+pub mod sandbox_enforcer;
+pub mod url_sanitizer;
 
 pub use ad_blocker::{
     AdBlocker, BlockStats, CheckResult, ContentType, FilterAction, FilterList, FilterRule,
+};
+
+pub use audit_logger::{
+    AuditFilter, AuditLogger, AuditSummary, EventCategory, SecurityEvent, Severity,
 };
 
 pub use ipc_validator::{
@@ -34,6 +43,12 @@ pub use privacy::{
     BlockReason, Cookie as PrivacyCookie, CookieDecision, CookiePolicy, CookieRules,
     PrivacyManager, PrivacySettings, TrackingProtectionList,
 };
+
+pub use sandbox_enforcer::{
+    AccessLevel, ResourceType, SandboxEnforcer, SandboxError, SandboxEvent, SandboxPolicy,
+};
+
+pub use url_sanitizer::{UrlSanitizationError, UrlSanitizer, UrlSanitizerConfig};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};

@@ -3,6 +3,9 @@ name = "downloads_manager"
 version.workspace = true
 edition.workspace = true
 
+[features]
+test-mock = []
+
 [dependencies]
 shared_types = { path = "../shared_types" }
 message_bus = { path = "../message_bus" }
@@ -18,3 +21,8 @@ futures-util = "0.3"
 
 [dev-dependencies]
 tokio-test = "0.4"
+
+# Enable test-mock feature when running tests
+[[test]]
+name = "test_download_metrics"
+required-features = ["test-mock"]
